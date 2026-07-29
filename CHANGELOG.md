@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-07-29
+
+### Added
+- `magento2-performance-audit`: added a mandatory-checklist framing right after the intro and a
+  "Common ways this gets shortcut" rationalization table, plus a hard self-verification gate as
+  the final workflow step (step 10) — every checkbox in the Audit Report Template must resolve to
+  either checked-with-evidence or an explicit `Skipped: <reason>` before the report can be
+  presented as done. Closes a gap where an agent could run only the steps that felt highest-signal
+  for the effort and quietly drop the rest while still presenting a confident, complete-looking
+  report. Found via dogfooding: a real audit run skipped 3 of the 9 workflow steps (Slow Query
+  Analysis, Cache Invalidation Efficiency, Client-Side AJAX Load) entirely and initially
+  under-sampled the Per-Page-Type Audit (1 URL instead of 3 per type) — all without flagging
+  either omission — even though the skill's own text already said "3 URLs, not 1" in plain
+  language. The gap wasn't instruction clarity, it was the absence of a check *before* the report
+  was called finished.
+
 ## [0.3.0] - 2026-07-29
 
 ### Added
