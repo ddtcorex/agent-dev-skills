@@ -81,6 +81,8 @@ govard sh -c "bin/magento indexer:reindex"
 
 **Also check that cron is actually running and draining the changelog** — schedule-mode indexers are only as fresh as the last successful cron run. Check `crontab -l` for a magento entry, and query `cron_schedule` for recent `success` rows (`SELECT MAX(executed_at) FROM cron_schedule WHERE status='success'`) — an idle cron combined with schedule-mode indexers silently produces stale prices/URLs/inventory with no error anywhere.
 
+> **On local dev, no crontab at all is frequently deliberate, not an oversight** — same "confirm the environment before treating it as a problem" rule as Infrastructure Configuration above. A developer box often stays idle by design so nothing runs unattended in the background; report a missing local crontab as **informational** ("cron isn't installed here — confirm this is intentional, and separately confirm staging/production actually has it"), not as a severity finding in its own right. Escalate to a real finding only once you've confirmed the target is staging/production, or that the *project's* cron is missing there too.
+
 ### 4. Async Operations (message queue consumers)
 
 Bulk APIs, async email sending, and async operations in Magento all run through message queue consumers — they don't do anything unless the consumers are actually running as processes (via cron or a supervisor), not just configured.
@@ -99,6 +101,8 @@ govard sh -c "bin/magento queue:consumers:start <consumer_name> --max-messages=1
 If no `queue:consumers:start` processes are running and there's no cron/supervisor job launching them, bulk operations and async email will queue up in `queue_message` tables and never actually process — check for this rather than assuming a config flag turns "async" on.
 
 **Read the consumer list before filing this as a routine perf finding.** Most idle consumers are a performance/staleness issue (bulk operations, grid indexing, async email). But payment-related consumers (order invoicing/refunding/capture, e.g. a payment module's own `*.order.invoicing`/`*.order.refunding` queues) or inventory-reservation consumers being idle are a **business-critical** issue, not a performance one — invoices, refunds, or stock reservations silently never processing has direct financial/customer impact. Scan the consumer names for payment/inventory keywords and flag those separately at higher severity than a generic "consumers aren't running" note.
+
+> **On local dev, idle consumers (and no cron running them) are often the safe/correct state, not a bug — including for payment consumers.** A local box frequently runs against a synced/sanitized copy of real customer and order data; if a payment-invoicing or email consumer *did* process its queue, it could fire real emails to real customer addresses or hit a live payment gateway API with sandboxed-looking-but-real order data. Don't report "payment consumers aren't running" as a business-critical finding on a local environment without first confirming that's actually a problem there — it's frequently the deliberate, correct default. Report it as **informational** locally ("consumers idle — confirm this is intentional for local safety, and separately verify staging/production has them running"), and reserve the business-critical severity for when you've confirmed the target is staging/production, where idle payment/inventory consumers really do mean unprocessed invoices/refunds/reservations.
 
 ### 5. Asset Optimization
 
@@ -139,6 +143,16 @@ lhci autorun --collect.url=https://your-store.test \
 | FCP (First Contentful Paint) | < 1.8s | 1.8-3s | > 3s |
 | TTFB (Time to First Byte) | < 800ms | 800-1800ms | > 1800ms |
 
+### Reading an LCP breakdown when render delay dominates
+
+The phase breakdown (TTFB / load delay / load duration / render delay) tells you *where* LCP time actually goes, not just the total. If **render delay is the overwhelming majority** of LCP — the image/resource itself loads fast, but the browser doesn't paint it until long after — the fix isn't in the network or image pipeline, it's client-side JS gating visibility. This is common on JS-driven themes (Hyvä + Alpine.js, PWA/React storefronts):
+
+- Check whether the LCP element (or its container) starts hidden behind a reactive class/directive — Alpine's `x-cloak`, a `:class` binding that includes `opacity-0`/`hidden`/`invisible`, or an equivalent framework pattern — and only becomes visible once the framework finishes hydrating. That decouples "resource ready" from "actually painted" by however long hydration takes across the whole page, not just this element.
+- Cross-check against the `DOMSize` insight: a large/deep DOM (more elements for the framework to walk and bind reactivity to) makes this worse — hydration time scales with page complexity, not just the LCP element's own markup.
+- Fix: render the LCP candidate visible by default in the server-rendered HTML (plain CSS/HTML, no JS-gated class) and let the framework take over only for *subsequent* state changes (slide switching, tab changes, etc.), not the initial paint.
+
+This is typically page-type-specific, not global — compare the LCP breakdown across all 3 page types (see Per-Page-Type Audit below), since the component causing it (a gallery, a carousel) often lives on only one page type, which is exactly the kind of thing a homepage-only spot check would miss.
+
 ### Manual Testing
 
 Open Chrome DevTools > Lighthouse:
@@ -157,6 +171,7 @@ Open Chrome DevTools > Lighthouse:
 >    ACCEPT="text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
 >    ```
 >    Every `curl` command below assumes these two variables are set first.
+> 3. **Confirm the URL you're about to test is actually the target, not a same-named remote.** In a multi-environment shop (local Docker + staging + production sharing similar hostnames), a project's own `core_config_data`/`env.php` `base_url` can be stale — copied over from a staging/production sync — and point at a completely different server than the container you're running `govard sh`/`govard db` commands against. A `curl` to that stale URL still returns 200 with valid-looking Magento HTML and headers (including a real `X-Magento-Cache-Debug`), so nothing *looks* wrong — every query-log/profiler capture that follows is then silently empty (wrong box entirely) or measuring someone else's environment. Get the real local hostname from the environment tooling itself (e.g. `govard open admin` prints it) rather than trusting `base_url` blindly, and sanity-check with `curl -skI <url> | grep -i x-backend-server` — confirming it maps to the same box you're running commands against before capturing anything.
 
 ### Query Count: Tiers, Not a Pass/Fail Gate
 
@@ -196,6 +211,8 @@ govard sh -c "grep -c '## QUERY' var/debug/db.log"
 govard sh -c "bin/magento dev:query-log:disable"
 ```
 
+> **Two-pass strategy keeps log volume sane.** `--include-call-stack=true` walks and serializes a full PHP stack trace for *every* query — several MB per page, and that compounds fast once you're capturing 3 page types (see Per-Page-Type Audit below). Run pass 1 with `--include-call-stack=false` (or just omit repeated shapes/counts are all you need to spot an N+1 candidate) across every page you're auditing; only re-enable `--include-call-stack=true` for a second, targeted re-capture of the specific page(s) whose repeated shape you're now tracing to a file:line. Stack-walking every page from the start is the slower, heavier default — reserve it for the one or two pages that actually need it.
+
 ### Common Query Issues
 
 | Issue | Pattern | Impact |
@@ -207,14 +224,56 @@ govard sh -c "bin/magento dev:query-log:disable"
 
 > **Check the call stack's namespace before deciding how to fix.** A repeated query traced back to `vendor/<vendor-name>/...` (a paid extension, not `vendor/magento/`) isn't yours to patch directly — check for a newer version of that extension first, and if none fixes it, wrap the offending call with a request-level memoization layer (a plugin/decorator that caches the result for the current request) rather than editing vendor code, which a composer update will silently overwrite.
 
-### Query Analysis Commands
+### Slow Query Analysis
+
+The query-count/N+1 audit above catches queries that run *too often*; it says nothing about queries that are individually slow (a missing index, an expensive JOIN, a huge unbounded scan) — those need their own check, and they matter even when the total query count looks healthy. Two complementary levels, cheapest first:
+
+**1. App-level: reuse the query log you already have, sorted by time instead of count.** `dev:query-log:enable` already records a `TIME:` line per query — you don't need MySQL's own slow log just to catch a slow query that happened *during a page load you were already capturing* for the N+1 audit:
 
 ```bash
-# Show slow queries (requires MySQL slow_query_log)
-govard db query "SHOW FULL PROCESSLIST"
+# Either grep an existing db.log capture for anything at/above a threshold...
+govard sh -c "grep -B1 -A2 'TIME: [1-9]' var/debug/db.log"   # >= 1.000s; adjust the pattern for your threshold
+
+# ...or capture ONLY slow queries directly, with call stacks, across real traffic:
+govard tool magento dev:query-log:enable --include-all-queries=false --query-time-threshold=1 --include-call-stack=true
+# ... reproduce traffic / browse pages ...
+govard tool magento dev:query-log:disable
 ```
 
-> **Local dev DBs are small and fast** — the absolute query *time* on a local box will often look fine (tens of milliseconds total) even when the query *count* is far over budget. Raw count is what matters here: on production, the same N+1 pattern pays a real network round-trip per query (even ~0.3–1ms same-datacenter) against much larger tables, so a high count on a fast local DB is still a real finding, not a false positive — don't dismiss it just because the local timing looks fine.
+This only sees queries triggered through Magento's own app requests. It won't catch slow queries from cron jobs, CLI imports, or anything else hitting the same database — for that, go to the DB itself.
+
+**2. DB-level: MySQL/MariaDB's own slow query log** catches everything regardless of source:
+
+```bash
+# Check current state first — don't assume it's off or on
+govard db query "SHOW VARIABLES LIKE 'slow_query_log%'"
+govard db query "SHOW VARIABLES LIKE 'long_query_time'"
+
+# Enable for the duration of this audit (session-safe; SET GLOBAL persists until restart or explicit disable)
+govard db query "SET GLOBAL slow_query_log = 'ON'; SET GLOBAL long_query_time = 1;"
+
+# Find where it's writing, then let the box run its normal/representative traffic for a while
+govard db query "SHOW VARIABLES LIKE 'slow_query_log_file'"
+
+# Analyze with mysqldumpslow (ships with every MySQL/MariaDB install — no extra tooling needed):
+govard sh -c "mysqldumpslow -s t -t 10 <slow_query_log_file>"   # top 10 by total time
+# pt-query-digest (Percona Toolkit), if installed, gives richer per-query-shape stats:
+# govard sh -c "pt-query-digest <slow_query_log_file>"
+
+# ALWAYS disable when done — same "diagnostic state, not a running state" rule as everywhere
+# else in this skill; a slow log left on writes disk forever and nobody remembers why
+govard db query "SET GLOBAL slow_query_log = 'OFF';"
+```
+
+**3. For each slow query found, `EXPLAIN` it before guessing at a fix:**
+
+```bash
+govard db query "EXPLAIN <the exact slow SQL, with real values substituted for placeholders>"
+```
+
+Read the `type` and `key` columns first — `type: ALL` (full table scan) or an empty `key` (no index used) on a query filtering/joining on a non-trivial row count is the smoking gun. Common Magento-specific causes: a `WHERE` on a custom/EAV attribute column with no matching index, a report/export query missing a composite index that matches its actual filter+sort combination, or a JOIN condition that doesn't line up with either side's index. Cross-reference against the `Missing Index`/`Expensive Join` rows in Common Query Issues above — this `EXPLAIN` step is how you confirm those heuristic grep hits are real, rather than reporting a `WHERE` clause as a finding on pattern-match alone.
+
+> **Local dev DBs are small and fast** — the absolute query *time* on a local box will often look fine (tens of milliseconds total) even when the query *count* is far over budget, and a query that would be a real `type: ALL` full-scan problem on production's actual row counts can run in a few ms locally with a table of 50 rows. Raw count is what matters for the N+1 check above; for this slow-query check, don't trust a fast local `EXPLAIN` on a near-empty table as proof the query is fine at production scale — check `type`/`key` on the query plan itself, not just how fast it happened to run against this box's data.
 
 ### HTML Profiler (per-request timing breakdown)
 
@@ -243,16 +302,19 @@ govard sh -c "bin/magento dev:profiler:disable"
 
 A single-page spot check isn't representative — different page types have very different bottleneck shapes (a CMS-heavy homepage vs. a layout-heavy product page vs. a grid-heavy category page). Audit at least one of each of these three page types, using both the HTML profiler and the query log together, with `full_page`, `block_html`, and `layout` caches **disabled** so you're measuring true cache-miss cost (the worst case every real cache-miss/deploy/flush pays) rather than a warm-cache request that tells you almost nothing.
 
+**Sample 3 URLs per page type, not 1 — except homepage, which is usually singular** (unless the store has multiple storefront views, in which case sample those too). One category and one product tells you *a* number; it can't tell you whether that number is representative of the type or an artifact of the one page you happened to pick, and it can't catch a bug whose cost only becomes visible at scale (see the size-scaling diagnostic under "Interpreting results correctly" below — it needs at least 3 differently-sized samples of the same type to work at all). Three samples per type is enough to show a pattern without turning the audit into a full crawl.
+
 ### 0. Pick genuinely representative pages first
 
 Before measuring anything, verify the specific URLs you're about to test aren't degenerate cases — this is the single easiest way to get a misleading audit:
 
 ```bash
-# Category: confirm it actually has products assigned (an empty category renders no grid,
-# no pagination, no real layered-nav facets, and will understate real page cost)
-govard db query "SELECT COUNT(*) FROM catalog_category_product WHERE category_id=<id>"
+# Category: pull a spread of product counts, not just one — you want a small, a medium,
+# and a large category (not the single largest root category, which is its own edge case)
+govard db query "SELECT category_id, COUNT(*) cnt FROM catalog_category_product GROUP BY category_id ORDER BY cnt LIMIT 200"
+# then pick 3 across that range, e.g. one ~10, one ~50-100, one ~200+
 
-# Product: confirm it's assigned to a website (unassigned products 404 / aren't routable)
+# Product: confirm each candidate is assigned to a website (unassigned products 404 / aren't routable)
 govard db query "SELECT * FROM catalog_product_website WHERE product_id=<id>"
 
 # Product: also watch for url_rewrite entries that 301/302 redirect elsewhere (including,
@@ -261,7 +323,7 @@ govard db query "SELECT * FROM catalog_product_website WHERE product_id=<id>"
 curl -sk -o /dev/null -w "%{http_code} -> %{redirect_url}\n" https://store.test/<product-url>.html
 ```
 
-Pick a category with a normal/median product count (not the largest root category, not an edge case), and a product that resolves 200 directly.
+Pick 3 categories spanning small/medium/large product counts (not the single largest root category, not an edge case), and 3 products that each resolve 200 directly — varying product type (simple/configurable) if the catalog has both.
 
 ### 1. Set up the uncached measurement environment
 
@@ -281,12 +343,22 @@ govard sh -c "> var/debug/db.log"
 
 ### 2. Capture each page type separately
 
-For each of the 3 URLs, clear the query log, fetch with a realistic `Accept`/User-Agent (see warning under Database Query Profiling above), save the HTML (for the profiler table) and a copy of the query log, then clear the log again before the next page — **checking the HTTP status every time**, since a non-200 response still produces a plausible-looking HTML file and query log that will silently corrupt every number downstream if you don't check:
+For each of the (typically 7: 1 home + 3 category + 3 product) URLs, clear the query log, fetch with a realistic `Accept`/User-Agent (see warning under Database Query Profiling above), save the HTML (for the profiler table) and a copy of the query log, then clear the log again before the next page — **checking the HTTP status every time**, since a non-200 response still produces a plausible-looking HTML file and query log that will silently corrupt every number downstream if you don't check:
 
 ```bash
-for name in home product category; do
-  code=$(curl -sk -H "Accept: $ACCEPT" -A "$UA" -o "${name}.html" -w "%{http_code}" "https://store.test/<url-for-$name>")
-  echo "$name: HTTP $code"
+declare -A urls=(
+  [home]="/"
+  [category_small]="/<small-category-url>.html"
+  [category_medium]="/<medium-category-url>.html"
+  [category_large]="/<large-category-url>.html"
+  [product_1]="/<product-url-1>.html"
+  [product_2]="/<product-url-2>.html"
+  [product_3]="/<product-url-3>.html"
+)
+for name in "${!urls[@]}"; do
+  url="${urls[$name]}"
+  code=$(curl -sk -H "Accept: $ACCEPT" -A "$UA" -o "${name}.html" -w "%{http_code}" "https://store.test$url")
+  echo "$name ($url): HTTP $code"
   [ "$code" = "200" ] || echo "  ^ NOT 200 — discard this capture, do not analyze ${name}.html/${name}.db.log"
   cp var/debug/db.log "${name}.db.log"
   govard sh -c "> var/debug/db.log"
@@ -313,6 +385,7 @@ Don't leave a target environment with caches disabled and full query logging on 
 - **Query count vs. query time are different signals.** A small/fast local DB can show trivial total query *time* (tens of ms) even when the query *count* is 3–5x over budget — don't dismiss a high count just because local timing looks fine; the count is what will hurt on production's real network round-trips and larger tables.
 - **Not every slow section benefits from the caches you just disabled.** `layout` cache only skips re-parsing/merging layout XML — it does NOT skip instantiating the PHP block objects for every declared block (that happens fresh on every request regardless of cache, since live objects can't be cached across requests). If a page's time is dominated by layout *generation* rather than block *rendering*, re-enabling `layout`/`block_html` cache won't fix it — the real lever is reducing how many blocks/modules contribute to that page's layout.
 - **A query shape repeated with near-identical counts across all 3 page types** (not just one) is a strong signal it comes from a globally-rendered block (header/footer/cart-drawer widget), not something page-specific — prioritize fixing that over a page-specific N+1, since it's paid on every single page view site-wide.
+- **A query shape whose count scales with the grid size, across your 3 category (or product-list) samples, is a separate signal from the one above — and needs at least 3 differently-sized samples to see at all.** Compare total query count and specific shape counts across the small/medium/large category samples: a shape whose count tracks the product count roughly 1:1 (e.g. ~10 on the 10-product category, ~200 on the 200-product one) is a per-item loop that isn't using the collection's already-batched data — a real N+1 that gets *worse as the catalog grows*, not a fixed per-page cost. This is exactly the kind of bug a single-category spot check cannot reveal: on a 9-product category it might add an invisible ~10 queries; on a 200-product one it's ~1,000+. Trace it with a call-stack-enabled re-capture of the largest sample (see the two-pass note above) — common culprits are a rich-snippets/structured-data block, a review-summary widget, or a price/label renderer that calls a per-product model method (e.g. `ReviewSummary::load($id)`, a pricing `Price::getValue()` behind a custom `around` plugin) instead of pre-loading via the collection (`addSummaryData()`, `addFinalPrice()`, etc.).
 - **This query count is only the initial server-rendered request** — a page that looks cheap here can still defer real work to its own client-side AJAX/GraphQL calls (see Client-Side AJAX Request Load Audit below), which this count never sees. Don't report a low DB query count as "this page is lightweight" without also checking what it fetches after the HTML loads.
 
 ## Cache Invalidation Efficiency Audit
@@ -336,6 +409,8 @@ govard sh -c "bin/magento deploy:mode:show"   # developer/default -> logging is 
 # always pair with the matching --enable-debug-logging=0 once diagnosis is done):
 govard sh -c "bin/magento setup:config:set --enable-debug-logging=1"
 ```
+
+> **No admin credentials available this session?** Reproducing a real entity save needs an authenticated admin action — don't work around that by writing directly to the DB or running a one-off bootstrap script against live data just to force a log line. If credentials aren't available, mark this section **unverified** in the report rather than skipping it silently, and say what *was* checked instead — e.g. a CLI/cron-triggered path like `indexer:reindex`, which exercises the same `clean()`/`cache_invalidate:` logging but isn't a stand-in for observer/plugin behavior on an actual admin save.
 
 **2. Reproduce ONE isolated action, then grep for the invalidation trail:**
 
@@ -415,6 +490,8 @@ A `.*` pattern (or a pattern far broader than the tags of the entity actually sa
 ## Client-Side AJAX Request Load Audit
 
 A page can pass every check above — `full_page` cache enabled, invalidation narrowly scoped — and still overload the backend, because `full_page` only caches the initial HTML response. Customer data (private content), GraphQL calls, and custom AJAX endpoints are session/customer-scoped, so they bypass FPC entirely and hit PHP-FPM/the database on **every single page view**, cached HTML or not. This matters more than it used to: modern crawlers (SEO bots, AI scrapers, headless-Chrome-based tools) execute JS the same way a real browser does, so every page they crawl re-fires the same AJAX calls a human visitor would — a site can look fully cached in every metric above and still fall over under crawl volume, because the part that's actually uncached is invisible to an HTML/query-count audit.
+
+> **Confirm this project actually uses the sections.xml/Customer Data pattern before leaning on §2 below.** Some Magento builds replace it partly or fully with a different reactive layer — a Livewire-style library (e.g. Magewire), a PWA/headless frontend, or GraphQL-driven state — where cart/customer widgets update through a different mechanism entirely, and a wildcard-rule check on `sections.xml` won't surface much because there's barely any `sections.xml` usage to begin with. Quick check: `find app/code vendor -iname sections.xml | wc -l` and a grep for the reactive library's own component base class under `app/code`. If it's low/near-zero, rely on the network capture in §1 instead — look for that other mechanism's own request pattern using the same "same-origin, repeated, sets a new session cookie" signals used below.
 
 ### 1. Capture the AJAX footprint of a representative page
 
@@ -649,11 +726,11 @@ curl -I https://store.test/ | grep -iE "x-.*debug|x-.*profile|^server:|x-powered
 # Performance Audit Report
 
 ## URLs Audited
-- Homepage: <actual URL>
-- Category: <actual URL> (note why it's representative — product count, not the largest/an edge case)
-- Product: <actual URL> (note if the first candidate 301-redirected and this is the one that resolved 200)
+- Homepage: <actual URL> (usually one; list more only if the store has multiple storefront views)
+- Category (small/medium/large): <3 actual URLs with their product counts> (note why each is representative — spanning the catalog's real size range, not 3 edge cases)
+- Product ×3: <3 actual URLs> (note if any candidate 301-redirected and which URL actually resolved 200)
 
-Always state the exact URLs tested, not just "homepage/category/product" — without them the report isn't reproducible or independently verifiable later.
+Always state the exact URLs tested, not just "homepage/category/product" — without them the report isn't reproducible or independently verifiable later. Testing 3 samples per type (not 1) is what lets a finding be reported as "confirmed across all samples of this type" rather than "seen on the one page tested."
 
 ## Infrastructure
 - [ ] Application Mode: production
@@ -687,6 +764,7 @@ Always state the exact URLs tested, not just "homepage/category/product" — wit
 - [ ] No N+1 queries detected (same query shape repeated many times in one page's `var/debug/db.log`)
 - [ ] Note: on a small/fast local DB, absolute query time can look fine even when count is over budget — flag on count, not just time
 - [ ] Note: this count only covers the initial server-rendered HTML request — it does not include the page's own client-side AJAX/GraphQL follow-up calls (see Client-Side AJAX Load above). A low DB query count does not mean low total backend cost if the page defers real work to those follow-up requests instead of the initial render — report both together, not the DB count in isolation.
+- [ ] Slow Query Analysis run (app-level `TIME:` sort and/or MySQL slow_query_log) — any query found `EXPLAIN`ed to confirm `type: ALL`/missing index before reporting it as a real finding, and slow_query_log turned back off afterward if it was enabled for this audit
 
 ## Core Web Vitals
 | Metric | Value | Status |
@@ -706,9 +784,10 @@ Always state the exact URLs tested, not just "homepage/category/product" — wit
 **When invoked:**
 1. Execute infrastructure checks (env.php, mode, cache status) — first confirm whether the target is local dev, staging, or production, since expectations differ (see note under Infrastructure Configuration)
 2. Run indexer status check, and verify cron is actually running/draining `cron_schedule`
-3. Run the Per-Page-Type Audit (homepage, product, category) with `full_page`/`block_html`/`layout` caches disabled — verify each test page is representative first (§0), then capture profiler + query log together (§1–2), then restore state (§3)
-4. Trace cache invalidation efficiency — enable temporary logging (debug.log for built-in Redis/file FPC, varnishlog/ban.list for Varnish), reproduce one isolated save/action, and flag any custom code causing broad/frequent flushes beyond Magento's default targeted invalidation
-5. Capture the AJAX footprint of a fresh/anonymous page load (Network tab) and audit `sections.xml` for overly broad Customer Data invalidation — these uncacheable requests are what crawler/bot JS execution multiplies regardless of FPC hit rate
-6. Run Lighthouse / Core Web Vitals audit (if URL provided)
-7. Scan `app/code` for code-level performance patterns using the grep recipes under Code-Level Performance Patterns
-8. Generate report with recommendations, prioritizing any finding that repeats across all 3 page types (site-wide impact) over page-specific ones — publish as a rendered artifact if the environment supports it (see Audit Report Template), otherwise markdown
+3. Run the Per-Page-Type Audit — homepage plus 3 category (small/medium/large) and 3 product URLs — with `full_page`/`block_html`/`layout` caches disabled — verify each test page is representative first (§0), then capture profiler + query log together (§1–2), watch for a query count that scales with grid size across the 3 category samples, then restore state (§3)
+4. Run Slow Query Analysis (app-level `TIME:` sort, and/or MySQL's own slow_query_log for cron/import-triggered queries the app-level log can't see) — `EXPLAIN` any candidate before reporting it, and turn slow_query_log back off when done
+5. Trace cache invalidation efficiency — enable temporary logging (debug.log for built-in Redis/file FPC, varnishlog/ban.list for Varnish), reproduce one isolated save/action (or mark unverified if no admin credentials are available this session), and flag any custom code causing broad/frequent flushes beyond Magento's default targeted invalidation
+6. Confirm which reactive/AJAX mechanism the project actually uses (sections.xml/Customer Data vs. Magewire/PWA/GraphQL or similar), then capture the AJAX footprint of a fresh/anonymous page load (Network tab) and audit accordingly — for sections.xml, check for overly broad Customer Data invalidation rules; these uncacheable requests are what crawler/bot JS execution multiplies regardless of FPC hit rate
+7. Run Core Web Vitals audit (Chrome DevTools MCP trace preferred, Lighthouse as fallback) — when render delay dominates an LCP, read it per the JS-hydration guidance under Core Web Vitals Audit rather than assuming a network/image problem
+8. Scan `app/code` for code-level performance patterns using the grep recipes under Code-Level Performance Patterns
+9. Generate report with recommendations, prioritizing any finding that repeats across all 3 page types (site-wide impact) over page-specific ones — publish as a rendered artifact if the environment supports it (see Audit Report Template), otherwise markdown
