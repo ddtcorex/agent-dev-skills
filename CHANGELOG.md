@@ -4,6 +4,46 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-07-29
+
+### Added
+- `magento2-performance-audit`: new **Slow Query Analysis** section — reuses the existing query
+  log's `TIME:` field to catch app-level slow queries, adds MySQL/MariaDB's own `slow_query_log`
+  (with `mysqldumpslow`/`pt-query-digest` analysis) for cron/import-triggered queries the app-level
+  log can't see, and an `EXPLAIN`-based workflow to confirm missing-index findings instead of
+  reporting on grep pattern-match alone.
+- `magento2-performance-audit`: Per-Page-Type Audit now samples 3 URLs per page type (small/medium/
+  large category, 3 products) instead of 1, plus a new size-scaling diagnostic — comparing query
+  count across differently-sized samples of the same type catches per-item N+1s whose cost only
+  becomes visible at scale, which a single-category spot check can't see at all. Caught two real
+  N+1s in dogfooding (a rich-snippets block and a pricing plugin both loading per-product data
+  individually) that a 1-URL-per-type audit had missed entirely.
+- `magento2-performance-audit`: base-URL verification callout — a project's `base_url` can be stale
+  (synced from staging/production) and point at a different server than the one actually being
+  audited, producing a silently-empty or wrong-target capture that still looks like valid data.
+- `magento2-performance-audit`: two-pass call-stack strategy for the DB query log — count/shape
+  first without `--include-call-stack`, re-capture with it only for the page(s) that need tracing,
+  instead of stack-walking every page from the start.
+- `magento2-performance-audit`: Core Web Vitals section now explains how to read an LCP breakdown
+  where render delay dominates (common on Alpine.js/Hyvä and other JS-hydration-driven themes) —
+  points at JS-gated visibility (`x-cloak`, reactive `opacity-0` classes) rather than network/image
+  causes.
+- `magento2-performance-audit`: Cache Invalidation Efficiency Audit now documents a fallback for
+  when admin credentials aren't available to reproduce an entity save — report as unverified rather
+  than skip silently or work around it with a risky direct DB/bootstrap-script action.
+- `magento2-performance-audit`: Client-Side AJAX audit now checks which reactive/AJAX mechanism a
+  project actually uses before applying the sections.xml checklist — some stacks (Magewire,
+  PWA/headless, GraphQL-driven state) replace it, making the standard reload-storm check moot.
+
+### Changed
+- `magento2-performance-audit`: cron and queue-consumer findings are no longer automatically scored
+  as Medium/High severity on local dev — an idle crontab and idle payment consumers are frequently
+  the deliberate, safe default there (avoids real emails/gateway calls against synced production
+  data), the same "confirm the environment first" rule already applied to Redis/Varnish. Severity
+  now escalates only once the target is confirmed staging/production.
+- `magento2-performance-audit`: Workflow steps renumbered/expanded (now 9 steps) to include slow
+  query analysis and the reactive-architecture check.
+
 ## [0.2.3] - 2026-07-24
 
 ### Fixed
