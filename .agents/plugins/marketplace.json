@@ -1,0 +1,16 @@
+{
+  "name": "dev-skills-hub",
+  "interface": {
+    "displayName": "Dev Skills Hub"
+  },
+  "plugins": [
+    {
+      "name": "dev-skills-hub",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "category": "Development"
+    }
+  ]
+}

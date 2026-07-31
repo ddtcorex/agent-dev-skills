@@ -1,14 +1,12 @@
 ---
 name: govard-toolbox
 description: |
-  High-level shortcuts and references for Govard development environment orchestrator. Use when:
-  - "Start/stop environment", "govard up", "govard down"
-  - "Run commands in container", "govard sh"
-  - "Database operations", "db dump", "db import"
-  - "Sync with remote", "bootstrap from staging"
-  - "Debug configuration", "Xdebug setup"
-
-  This is the BASE skill - for framework-specific shortcuts, also load govard-magento or govard-laravel.
+  This skill should be used when the user asks to "start/stop environment", "govard up",
+  "govard down", "run commands in container", "govard sh", "do database operations", "db dump",
+  "db import", "sync with remote", "bootstrap from staging", "debug configuration", or "set up
+  Xdebug". Provides high-level shortcuts and references for the Govard development environment
+  orchestrator. This is the BASE skill — for framework-specific shortcuts, also load
+  govard-magento or govard-laravel.
 compatibility: claude, codex, opencode, copilot
 metadata:
   audience: developers

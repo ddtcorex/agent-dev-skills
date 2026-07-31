@@ -1,14 +1,11 @@
 ---
 name: magento2-linter
 description: |
-  Runs automated code quality checks for Magento 2 projects. Use when:
-  - "Check coding standards", "run phpcs", "lint my code"
-  - "PHPStan analysis", "static analysis on this module"
-  - "Find security issues in code", "audit custom code"
-  - "Verify code quality before commit"
-
-  This skill runs PHPCS (Magento2 standard) and PHPStan. It is DEPENDENT on magento2-dev-core
-  for understanding the coding standards it validates.
+  This skill should be used when the user asks to "check coding standards", "run phpcs", "lint
+  my code", "run PHPStan analysis", "run static analysis on this module", "find security
+  issues in code", "audit custom code", or "verify code quality before commit". Runs automated
+  code quality checks for Magento 2 projects — PHPCS (Magento2 standard) and PHPStan.
+  DEPENDENT on magento2-dev-core for understanding the coding standards it validates.
 compatibility: claude, codex, opencode, copilot
 depends: [magento2-dev-core]
 metadata:

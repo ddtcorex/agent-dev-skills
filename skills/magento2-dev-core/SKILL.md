@@ -1,14 +1,11 @@
 ---
 name: magento2-dev-core
 description: |
-  Foundation skill for professional Magento 2 development. Use when:
-  - Creating new modules or customizations
-  - Implementing features following Magento architecture
-  - Working with Dependency Injection, Repositories, or Plugins
-  - Writing secure Magento code
-  - Building backend logic, CLI commands, or cron jobs
-
-  This is the CORE skill that other Magento 2 skills depend on. Always load this first.
+  This skill should be used when the user is creating new Magento 2 modules or customizations,
+  implementing features following Magento architecture, working with Dependency Injection,
+  Repositories, or Plugins, writing secure Magento code, or building backend logic, CLI
+  commands, or cron jobs. Foundation skill for professional Magento 2 development. This is the
+  CORE skill that other Magento 2 skills depend on. Always load this first.
 compatibility: claude, codex, opencode, copilot
 metadata:
   audience: developers

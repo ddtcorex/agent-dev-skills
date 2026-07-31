@@ -1,13 +1,11 @@
 ---
 name: magento2-security-scan
 description: |
-  Scans Magento 2 code for security vulnerabilities and compliance issues. Use when:
-  - "Security audit", "find vulnerabilities", "check for XSS"
-  - "CSRF protection check", "validate form security"
-  - "Dependency audit", "check for outdated packages"
-  - "PCI compliance check", "security review before deploy"
-
-  DEPENDENT on magento2-dev-core for security patterns.
+  This skill should be used when the user asks to "run a security audit", "find
+  vulnerabilities", "check for XSS", "check CSRF protection", "validate form security", "run a
+  dependency audit", "check for outdated packages", "run a PCI compliance check", or "do a
+  security review before deploy". Scans Magento 2 code for security vulnerabilities and
+  compliance issues. DEPENDENT on magento2-dev-core for security patterns.
 compatibility: claude, codex, opencode, copilot
 depends: [magento2-dev-core]
 metadata:

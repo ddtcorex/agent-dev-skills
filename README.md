@@ -1,9 +1,9 @@
 # AI Development Skills Hub
 
-An extensible hub of AI development skills, packaged as a Claude Code plugin --
-currently Magento 2 (architecture, linting, performance, security) and Govard
-dev-environment orchestration for Magento and Laravel, with more tech stacks
-added over time.
+An extensible hub of AI development skills, packaged as a plugin for both
+Claude Code and Codex CLI -- currently Magento 2 (architecture, linting,
+performance, security) and Govard dev-environment orchestration for Magento
+and Laravel, with more tech stacks added over time.
 
 Every skill follows the open [Agent Skills standard](https://agentskills.io) (a
 `SKILL.md` file with `name`/`description` frontmatter), which Claude Code,
@@ -15,9 +15,9 @@ each one, since they don't all scan the same directory name.
 
 ## 📂 Directory Structure
 
-Every skill lives under `skills/<name>/SKILL.md` — this is the layout Claude Code's
-plugin loader requires, and it's the single source of truth (no other copy exists
-anywhere else in the repo).
+Every skill lives under `skills/<name>/SKILL.md` — this is the layout both
+Claude Code's and Codex CLI's plugin loaders require, and it's the single
+source of truth (no other copy exists anywhere else in the repo).
 
 ```
 dev-skills-hub/
@@ -25,6 +25,11 @@ dev-skills-hub/
 ├── .claude-plugin/
 │   ├── plugin.json                  # Claude Code plugin manifest
 │   └── marketplace.json             # Self-listing marketplace (source: "./")
+├── .codex-plugin/
+│   └── plugin.json                  # Codex CLI plugin manifest (points at the same skills/)
+├── .agents/
+│   └── plugins/
+│       └── marketplace.json         # Self-listing marketplace for Codex (source: local "./")
 │
 └── skills/
     ├── 📦 CORE STANDARDS & ARCHITECTURES (Foundation patterns)
@@ -131,10 +136,22 @@ repo's bare `skills/`, so pick the option(s) below for the tools you use.
 ```
 Updates: `/plugin marketplace update dev-skills-hub`.
 
-### Direct use in your own project — one-line install/update
+### Codex CLI — as a plugin (recommended)
+```bash
+codex plugin marketplace add ddtcorex/dev-skills-hub
+codex plugin add dev-skills-hub@dev-skills-hub
+```
+Updates: `codex plugin marketplace upgrade dev-skills-hub`. Uninstall:
+`codex plugin remove dev-skills-hub@dev-skills-hub` then
+`codex plugin marketplace remove dev-skills-hub`.
 
-Each tool scans its own directory name, so `install.sh` clones this repo once
-into `~/.dev-skills-hub` and links each skill into every tool's expected path:
+### OpenCode & GitHub Copilot, or direct skill files — one-line install/update
+
+Neither OpenCode nor GitHub Copilot has a plugin mechanism yet, and Claude/Codex
+users who'd rather have plain skill files than an installed plugin can use this
+too. Each tool scans its own directory name, so `install.sh` clones this repo
+once into `~/.dev-skills-hub` and links each skill into every tool's expected
+path:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ddtcorex/dev-skills-hub/master/install.sh | bash
@@ -157,6 +174,12 @@ curl -fsSL .../install.sh | bash -s -- -y --uninstall
 | OpenCode | `.opencode/skills/` (also checks `.claude/skills/`, `.agents/skills/`) | `~/.config/opencode/skills/` |
 | Codex CLI | `.agents/skills/` **only** | `~/.agents/skills/` |
 | GitHub Copilot / VS Code | `.github/skills/` (also checks `.claude/skills/`, `.agents/skills/`, or a custom `chat.agentSkillsLocations` path) | `~/.copilot/skills/` |
+
+> This table is Codex CLI's *project-level skill scan*, separate from the
+> `codex plugin add` install above — that reads `.codex-plugin/plugin.json`
+> directly and doesn't touch `.agents/skills/` at all. Use whichever fits: the
+> plugin path if you just want the skills active, this table's paths if you
+> want plain files you can inspect/edit directly in the project.
 
 `install.sh` creates each tool's own dedicated path (symlinked to the
 `~/.dev-skills-hub` cache by default, or real copies with `--mode copy`) rather than

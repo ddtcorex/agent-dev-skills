@@ -20,5 +20,6 @@
     "govard",
     "laravel",
     "devops"
-  ]
+  ],
+  "skills": "./skills/"
 }

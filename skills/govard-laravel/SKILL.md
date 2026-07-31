@@ -1,14 +1,10 @@
 ---
 name: govard-laravel
 description: |
-  Laravel-specific Govard shortcuts and commands. Use when:
-  - "Run migrations", "artisan commands"
-  - "Clear Laravel cache", "config:cache"
-  - "Queue operations", "schedule:run"
-  - "Tinker into app", "artisan tinker"
-  - "Laravel Pint", "npm dev/prod"
-
-  DEPENDENT on govard-toolbox for base commands.
+  This skill should be used when the user asks to "run migrations", "run artisan commands",
+  "clear Laravel cache", "config:cache", "run queue operations", "schedule:run", "tinker into
+  app", "artisan tinker", "run Laravel Pint", or "npm dev/prod". Provides Laravel-specific
+  Govard shortcuts and commands. DEPENDENT on govard-toolbox for base commands.
 compatibility: claude, codex, opencode, copilot
 depends: [govard-toolbox]
 metadata:

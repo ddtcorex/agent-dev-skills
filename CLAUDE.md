@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A Claude Code plugin (`dev-skills-hub`) bundling 10 Magento 2 and Govard
-development skills, distributed via a self-listing marketplace. There is no
-build step, no test suite, and no application code — the repository *is* the
-plugin, and its content is Markdown (`SKILL.md`) plus three JSON manifests and
-one install script.
+A dual-ecosystem plugin (`dev-skills-hub`) bundling 10 Magento 2 and Govard
+development skills, distributed via self-listing marketplaces for both Claude
+Code and Codex CLI. There is no build step, no test suite, and no application
+code — the repository *is* the plugin (in both ecosystems at once), and its
+content is Markdown (`SKILL.md`) plus four JSON manifests and one install
+script.
 
 ## Architecture
 
@@ -25,26 +26,44 @@ anywhere in the repo (no symlinks, no build-generated duplicates) — if a
 change needs skill content in a different shape, change how it's *consumed*,
 not where it lives.
 
-### The plugin self-lists its own marketplace
+### The plugin self-lists its own marketplace — for two ecosystems
 
-`.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` live side
-by side. `marketplace.json` has exactly one entry, with `"source": "./"`,
-pointing back at the repo root where `plugin.json` itself lives — this repo is
-simultaneously "a plugin" and "the marketplace that hosts that one plugin."
-The marketplace's top-level `name` and the plugin's `name` are kept identical
-(`dev-skills-hub`) on purpose, so `/plugin install dev-skills-hub@dev-skills-hub`
-reads as one coherent thing rather than two unrelated names. The **version
-field must be bumped in both files together** (`plugin.json`'s `version` and
-`marketplace.json`'s `plugins[0].version` /  `metadata.version`) — nothing
-enforces they match automatically.
+This repo ships two independent plugin manifests, one per ecosystem, that
+both point at the *same* `skills/` directory so neither duplicates content:
 
-### One SKILL.md format, four incompatible discovery paths
+- **Claude Code**: `.claude-plugin/plugin.json` and
+  `.claude-plugin/marketplace.json` live side by side. `marketplace.json` has
+  exactly one entry, with `"source": "./"`, pointing back at the repo root
+  where `plugin.json` itself lives — this repo is simultaneously "a plugin"
+  and "the marketplace that hosts that one plugin."
+- **Codex CLI**: since Codex's plugin marketplace launched (March 2026), it
+  reads the exact same `skills/<name>/SKILL.md` layout through its own
+  `.codex-plugin/plugin.json` (with an explicit `"skills": "./skills/"`
+  pointer, since Codex does not auto-discover a root `skills/` folder the way
+  Claude's plugin loader does) plus a repo-scoped
+  `.agents/plugins/marketplace.json` that self-lists this repo the same way
+  (`"source": {"source": "local", "path": "./"}`). Verified end-to-end
+  against the real `codex` binary: `codex plugin marketplace add .` then
+  `codex plugin add dev-skills-hub@dev-skills-hub` resolves all 10 skills
+  with zero copying.
+
+Both marketplaces' top-level `name` and the plugin's `name` are kept
+identical (`dev-skills-hub`) on purpose, so `plugin install
+dev-skills-hub@dev-skills-hub` reads as one coherent thing on either tool.
+The **version field must be bumped in three places together** —
+`.claude-plugin/plugin.json`'s `version`, `.claude-plugin/marketplace.json`'s
+`plugins[0].version` / `metadata.version`, and `.codex-plugin/plugin.json`'s
+`version` (Codex's `.agents/plugins/marketplace.json` has no version field of
+its own) — nothing enforces they match automatically.
+
+### One SKILL.md format, four incompatible project-level paths, two plugin loaders
 
 All 10 skills follow the [Agent Skills standard](https://agentskills.io) (a
 `SKILL.md` file with `name`/`description` YAML frontmatter) — a format Claude
 Code, OpenCode, Codex CLI, and GitHub Copilot all read identically. What
-differs is which directory name each tool scans in a *consuming* project, and
-none of them can be pointed at an arbitrary path:
+differs is which directory name each tool scans in a *consuming project* for
+loose (non-plugin) skills, and none of them can be pointed at an arbitrary
+path:
 
 | Tool | Project-level path |
 |---|---|
@@ -53,12 +72,21 @@ none of them can be pointed at an arbitrary path:
 | Codex CLI | `.agents/skills/` only |
 | GitHub Copilot | `.github/skills/` (also checks `.claude/skills/`, `.agents/skills/`, or `chat.agentSkillsLocations`) |
 
-This repo's own bare `skills/` folder matches **none** of those — it only
-works because Claude Code's *plugin* loader (a separate mechanism from
-project-level skill scanning) specifically looks for `skills/` at plugin root.
-`install.sh` exists to bridge this gap for direct (non-plugin) use: it never
-tries to make one folder satisfy all four tools, it links per-tool into
-whichever directory each one actually scans.
+This repo's own bare `skills/` folder matches **none** of those project-level
+paths — it works for two tools, but for two different reasons:
+
+- **Claude Code**'s *plugin* loader (a separate mechanism from project-level
+  skill scanning) specifically looks for `skills/` at plugin root.
+- **Codex CLI**, since its plugin marketplace launch, has an equivalent
+  separate plugin loader — a `.codex-plugin/plugin.json` with its own
+  `skills` pointer — that is likewise independent of the `.agents/skills/`
+  project-level scan in the table above.
+
+OpenCode and GitHub Copilot have no plugin-loader equivalent as of this
+writing. `install.sh` exists to bridge the gap for direct (non-plugin) use on
+any tool — including Claude/Codex users who'd rather symlink skill files than
+install a plugin: it never tries to make one folder satisfy all four tools,
+it links per-tool into whichever directory each one actually scans.
 
 ### Skill dependency chain
 
@@ -121,6 +149,15 @@ claude plugin install dev-skills-hub@dev-skills-hub
 claude plugin uninstall dev-skills-hub@dev-skills-hub
 claude plugin marketplace remove dev-skills-hub
 
+# Codex CLI has no `plugin validate` subcommand -- the only real check is a
+# live round-trip. Use $CODEX_HOME to keep it out of your real Codex config:
+export CODEX_HOME=$(mktemp -d)
+codex plugin marketplace add .
+codex plugin list --available --json   # confirm dev-skills-hub@dev-skills-hub is listed
+codex plugin add dev-skills-hub@dev-skills-hub
+codex plugin list --json               # confirm it installed and all 10 skills resolved
+unset CODEX_HOME                       # the temp dir is disposable -- nothing else to clean up
+
 # install.sh: syntax check and dry test in an isolated scratch dir (never
 # test --scope personal against your real $HOME -- override HOME and
 # DEV_SKILLS_HUB_HOME to a scratch path first). Note: install.sh's REPO_URL
@@ -143,20 +180,28 @@ manual release step in the GitHub UI.
 2. Bump `"version"` in `.claude-plugin/plugin.json`.
 3. Bump `"version"` in `.claude-plugin/marketplace.json` — both
    `plugins[0].version` and top-level `metadata.version` — to the same value.
-4. If `skills/` changed, run `claude plugin validate . --strict` and
-   `claude --plugin-dir . plugin details dev-skills-hub` locally first.
-5. Commit, then tag and push:
+4. Bump `"version"` in `.codex-plugin/plugin.json` to the same value
+   (`.agents/plugins/marketplace.json` has no version field to update).
+5. If `skills/` changed, run `claude plugin validate . --strict` and
+   `claude --plugin-dir . plugin details dev-skills-hub` locally first; for a
+   change that affects Codex specifically, also run the
+   `codex plugin marketplace add .` / `codex plugin add` round-trip from the
+   Commands section above.
+6. Commit, then tag and push:
    ```bash
    git tag -a vX.Y.Z -m "vX.Y.Z - <one-line summary>"
    git push origin master
    git push origin vX.Y.Z
    ```
-6. Confirm the workflow succeeded and the release published:
+7. Confirm the workflow succeeded and the release published:
    ```bash
    gh run list --repo ddtcorex/dev-skills-hub --limit 1
    gh release view vX.Y.Z --repo ddtcorex/dev-skills-hub
    ```
-7. If the workflow fails on the changelog-extraction step, it's almost always
+8. If the workflow fails on the changelog-extraction step, it's almost always
    because the `## [X.Y.Z]` header in `CHANGELOG.md` doesn't exactly match the
    pushed tag's version (the workflow strips a leading `v` from the tag and
-   looks for `[X.Y.Z]` literally).
+   looks for `[X.Y.Z]` literally). The release workflow's manifest-validation
+   step also runs `jq empty` on `.codex-plugin/plugin.json` and
+   `.agents/plugins/marketplace.json` now — a JSON syntax error in either
+   fails the release the same way a bad `.claude-plugin/*.json` always did.

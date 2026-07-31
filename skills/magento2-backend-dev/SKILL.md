@@ -1,12 +1,11 @@
 ---
 name: magento2-backend-dev
 description: |
-  Magento 2 backend development: REST/SOAP/GraphQL APIs, CLI commands, and cron jobs. Use when:
-  - "Create API endpoint", "build REST API", "add GraphQL resolver"
-  - "Create CLI command", "add cron job", "setup message queue"
-  - "Implement web API", "add SOAP service", "create data provider"
-
-  DEPENDENT on magento2-dev-core for security and architecture patterns.
+  This skill should be used when the user asks to "create an API endpoint", "build a REST API",
+  "add a GraphQL resolver", "create a CLI command", "add a cron job", "set up a message queue",
+  "implement a web API", "add a SOAP service", or "create a data provider". Covers Magento 2
+  backend development: REST/SOAP/GraphQL APIs, CLI commands, and cron jobs. DEPENDENT on
+  magento2-dev-core for security and architecture patterns.
 compatibility: claude, codex, opencode, copilot
 depends: [magento2-dev-core]
 metadata:

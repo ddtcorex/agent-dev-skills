@@ -1,14 +1,10 @@
 ---
 name: govard-magento
 description: |
-  Magento-specific Govard shortcuts and commands. Use when:
-  - "Clear Magento cache", "flush redis cache"
-  - "Run Magento CLI", "bin/magento commands"
-  - "Deploy static content", "setup:di:compile"
-  - "Reindex catalog", "indexer commands"
-  - "Enable/disable modules"
-
-  DEPENDENT on govard-toolbox for base commands.
+  This skill should be used when the user asks to "clear Magento cache", "flush redis cache",
+  "run Magento CLI", "run bin/magento commands", "deploy static content", "setup:di:compile",
+  "reindex catalog", "run indexer commands", or "enable/disable modules". Provides
+  Magento-specific Govard shortcuts and commands. DEPENDENT on govard-toolbox for base commands.
 compatibility: claude, codex, opencode, copilot
 depends: [govard-toolbox]
 metadata:

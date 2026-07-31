@@ -4,6 +4,37 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-07-31
+
+### Added
+- Codex CLI plugin support: `.codex-plugin/plugin.json` (points `skills: "./skills/"` at the
+  same `skills/` directory Claude Code's plugin already uses — no content duplication) plus a
+  self-listing `.agents/plugins/marketplace.json`, mirroring the existing
+  `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` pair. This repo is now
+  installable as a plugin on both Claude Code and Codex CLI from the same source. Verified
+  end-to-end against the real `codex` CLI (`codex plugin marketplace add .` /
+  `codex plugin add dev-skills-hub@dev-skills-hub`) — all 10 skills resolve correctly.
+- `.github/workflows/release.yml` now also validates `.codex-plugin/plugin.json` and
+  `.agents/plugins/marketplace.json` (`jq empty`) on every tagged release.
+- README: new "Codex CLI — as a plugin" install section, and a directory-structure entry for
+  the new Codex manifests.
+
+### Changed
+- `magento2-performance-audit`: split from a single 9,349-word SKILL.md into a lean ~1,165-word
+  SKILL.md plus 8 `references/*.md` files (one per audit category), following current
+  progressive-disclosure skill-authoring guidance. Cuts the skill's on-invoke token cost from
+  ~24.3k to ~3k (verified via `claude --plugin-dir . plugin details dev-skills-hub`) — previously
+  ~4x every other skill in this repo, now in line with the rest. No content was cut, only moved;
+  the mandatory-checklist framing, workflow steps, and self-verification gate stay in SKILL.md
+  exactly as before.
+- All 10 skills' frontmatter `description` fields rewritten from a bullet-list `Use when: - "X"`
+  format to the current third-person convention (`This skill should be used when the user asks
+  to "X", "Y"...`) — same trigger phrases and dependency notes, reworded to match current
+  skill-authoring guidance.
+- `CLAUDE.md`: documents the dual-ecosystem (Claude Code + Codex CLI) plugin architecture —
+  updated marketplace/self-listing section, discovery-paths table, Commands, and release
+  checklist (version now bumps in three files, not two).
+
 ## [0.3.1] - 2026-07-29
 
 ### Added

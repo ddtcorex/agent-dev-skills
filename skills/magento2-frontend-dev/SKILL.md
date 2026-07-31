@@ -1,13 +1,10 @@
 ---
 name: magento2-frontend-dev
 description: |
-  Magento 2 frontend development using Luma/Blank theme. Use when:
-  - "Create Knockout.js component", "add UI Component"
-  - "Modify layout XML", "customize template"
-  - "Write LESS CSS", "style with Magento UI library"
-  - "Add RequireJS module", "extend JavaScript"
-  - "Customize checkout", "modify cart page"
-
+  This skill should be used when the user asks to "create a Knockout.js component", "add a UI
+  Component", "modify layout XML", "customize a template", "write LESS CSS", "style with the
+  Magento UI library", "add a RequireJS module", "extend JavaScript", "customize checkout", or
+  "modify the cart page". Covers Magento 2 frontend development using the Luma/Blank theme.
   DEPENDENT on magento2-dev-core for backend patterns and escaping.
 compatibility: claude, codex, opencode, copilot
 depends: [magento2-dev-core]

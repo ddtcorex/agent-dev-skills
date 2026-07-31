@@ -1,15 +1,12 @@
 ---
 name: magento2-hyva-dev
 description: |
-  Expert Hyvä theme development for Magento 2. Use when:
-  - "Create Hyvä theme", "setup child theme", "build Alpine.js component"
-  - "Make this CSP-compliant", "add Tailwind CSS classes"
-  - "Convert Luma to Hyvä", "migrate Knockout to Alpine"
-  - "Hyvä checkout", "Hyvä React components"
-  - "Tailwind configuration", "CSP nonce registration"
-
-  This is a SPECIALIZED skill for Hyvä-specific patterns. DEPENDENT on magento2-dev-core
-  for PHP/backend patterns.
+  This skill should be used when the user asks to "create a Hyvä theme", "set up a child
+  theme", "build an Alpine.js component", "make this CSP-compliant", "add Tailwind CSS
+  classes", "convert Luma to Hyvä", "migrate Knockout to Alpine", work on "Hyvä checkout" or
+  "Hyvä React components", or handle "Tailwind configuration" or "CSP nonce registration".
+  Provides expert Hyvä theme development for Magento 2. This is a SPECIALIZED skill for
+  Hyvä-specific patterns. DEPENDENT on magento2-dev-core for PHP/backend patterns.
 compatibility: claude, codex, opencode, copilot
 depends: [magento2-dev-core]
 metadata:
