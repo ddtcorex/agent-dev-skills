@@ -31,6 +31,7 @@ This skill performs a comprehensive audit of Magento 2 performance, infrastructu
 | "One category and one product page is representative enough" | Only 3 differently-sized samples per type can surface the size-scaling N+1 signal (`references/per-page-type-audit.md`) — a single sample is provably unable to show it, however clean the one page looks |
 | "This step needs admin credentials / a Chrome DevTools MCP I don't have" | Mark that section **unverified** with the reason, in the report — don't drop it from the conversation as if it were never in scope |
 | "The draft report already has good findings, ship it" | Diff the draft against every checkbox in the Audit Report Template *before* presenting it as done — an unchecked box with no skip reason means the audit isn't finished, not that it's fine to omit |
+| "This query shape (or profiler timer) repeats/is slow but I don't think it's a real bug" | Not your call to make silently — list it in the Repeated Query Shapes or Slowest Blocks/Templates table (`references/report-template.md`) with your assessment anyway. A borderline case left out of the report is indistinguishable from one that was never checked |
 
 ## Related Skills
 
@@ -46,7 +47,8 @@ Nine categories, each with full commands/thresholds/edge-cases in its own refere
 |---|---|
 | Infrastructure, cache, indexer, async consumers, asset optimization, cron, security probes | `references/infrastructure-checks.md` |
 | Core Web Vitals (LCP/INP/CLS, Chrome DevTools MCP trace, Lighthouse fallback) | `references/core-web-vitals.md` |
-| Database query profiling: query-count tiers, query log setup, common issues, Slow Query Analysis, HTML profiler | `references/database-query-profiling.md` |
+| Database query profiling: query-count tiers, query log setup, common issues, Slow Query Analysis | `references/database-query-profiling.md` |
+| HTML profiler: block/template timing, tracing custom-code cost, cross-page-type signals | `references/html-profiler-audit.md` |
 | Per-page-type audit (homepage + 3 category + 3 product samples, uncached) | `references/per-page-type-audit.md` |
 | Cache invalidation efficiency (built-in FPC debug log + Varnish BAN tracing) | `references/cache-invalidation-audit.md` |
 | Client-side AJAX/Customer Data load (sections.xml, reload storms) | `references/ajax-load-audit.md` |
@@ -58,13 +60,13 @@ Nine categories, each with full commands/thresholds/edge-cases in its own refere
 **When invoked, steps 1-9 are mandatory, run in order, none optional:**
 1. Execute infrastructure checks (env.php, mode, cache status) — first confirm whether the target is local dev, staging, or production, since expectations differ. Full detail: `references/infrastructure-checks.md`
 2. Run indexer status check, and verify cron is actually running/draining `cron_schedule`. Full detail: `references/infrastructure-checks.md`
-3. Run the Per-Page-Type Audit — homepage plus 3 category (small/medium/large) and 3 product URLs — with `full_page`/`block_html`/`layout` caches disabled — verify each test page is representative first, then capture profiler + query log together, watch for a query count that scales with grid size across the 3 category samples, then restore state. Full detail: `references/per-page-type-audit.md` and `references/database-query-profiling.md`
+3. Run the Per-Page-Type Audit — homepage plus 3 category (small/medium/large) and 3 product URLs — with `full_page`/`block_html`/`layout` caches disabled — verify each test page is representative first, then capture profiler + query log together, watch for a query count (and a slow block/template timer) that scales with grid size across the 3 category samples, then restore state. Full detail: `references/per-page-type-audit.md`, `references/database-query-profiling.md`, and `references/html-profiler-audit.md`
 4. Run Slow Query Analysis (app-level `TIME:` sort, and/or MySQL's own slow_query_log for cron/import-triggered queries the app-level log can't see) — `EXPLAIN` any candidate before reporting it, and turn slow_query_log back off when done. Full detail: `references/database-query-profiling.md`
 5. Trace cache invalidation efficiency — enable temporary logging (debug.log for built-in Redis/file FPC, varnishlog/ban.list for Varnish), reproduce one isolated save/action (or mark unverified if no admin credentials are available this session), and flag any custom code causing broad/frequent flushes beyond Magento's default targeted invalidation. Full detail: `references/cache-invalidation-audit.md`
 6. Confirm which reactive/AJAX mechanism the project actually uses (sections.xml/Customer Data vs. Magewire/PWA/GraphQL or similar), then capture the AJAX footprint of a fresh/anonymous page load (Network tab) and audit accordingly — for sections.xml, check for overly broad Customer Data invalidation rules; these uncacheable requests are what crawler/bot JS execution multiplies regardless of FPC hit rate. Full detail: `references/ajax-load-audit.md`
 7. Run Core Web Vitals audit (Chrome DevTools MCP trace preferred, Lighthouse as fallback) — when render delay dominates an LCP, read it per the JS-hydration guidance rather than assuming a network/image problem. Full detail: `references/core-web-vitals.md`
 8. Scan `app/code` for code-level performance patterns using the grep recipes. Full detail: `references/code-level-patterns.md`
-9. Draft the report with recommendations, prioritizing any finding that repeats across all 3 page types (site-wide impact) over page-specific ones. Template: `references/report-template.md`
+9. Draft the report with recommendations, prioritizing any finding that repeats across all 3 page types (site-wide impact) over page-specific ones — and populate both the Repeated Query Shapes table (every shape repeated more than ~5 times per page load) and the Slowest Blocks/Templates table (every profiler timer past the threshold in `references/html-profiler-audit.md`), not just the ones already confirmed as bugs. Template: `references/report-template.md`
 
 **10. Self-verification gate — mandatory, run before presenting the report to the user:**
 

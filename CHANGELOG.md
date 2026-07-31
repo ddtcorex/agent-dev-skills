@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-07-31
+
+### Added
+- `magento2-performance-audit`: new mandatory **Repeated Query Shapes** table in the Audit
+  Report Template — every normalized query shape repeating more than ~5 times on a single page
+  load must be listed with its trace and an assessment, not just collapsed into a pass/fail
+  "no N+1 detected" checkbox. Closes a gap where a borderline-repeated query could be silently
+  judged "probably not a bug" and left out of the report entirely, with no evidence for the
+  reader to check that judgment against.
+- `magento2-performance-audit`: new `references/html-profiler-audit.md` — the HTML profiler
+  (block/template PHP timing) was previously bundled into the database-query-profiling
+  reference despite measuring a different signal (PHP execution time, not SQL) with no real
+  interpretation guidance. The new file explains what each profiler column means, how to trace
+  a slow timer to custom code (including a custom plugin wrapping a *core* method, which hides
+  the extra cost inside a core timer), and applies the same site-wide/size-scaling diagnostic
+  signals already used for repeated queries to slow blocks/templates. Adds a matching mandatory
+  **Slowest Blocks/Templates** table to the Audit Report Template.
+
+### Changed
+- `magento2-performance-audit`: Workflow steps 3 and 9, the Audit Categories table, and the
+  "Common ways this gets shortcut" table updated to reflect the HTML profiler's own reference
+  file and the two new report tables.
+
 ## [0.4.0] - 2026-07-31
 
 ### Added

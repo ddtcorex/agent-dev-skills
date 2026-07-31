@@ -63,6 +63,8 @@ govard sh -c "bin/magento dev:query-log:disable"
 
 > **Check the call stack's namespace before deciding how to fix.** A repeated query traced back to `vendor/<vendor-name>/...` (a paid extension, not `vendor/magento/`) isn't yours to patch directly — check for a newer version of that extension first, and if none fixes it, wrap the offending call with a request-level memoization layer (a plugin/decorator that caches the result for the current request) rather than editing vendor code, which a composer update will silently overwrite.
 
+> **Report every repeated shape past the threshold, not just the ones you're confident are bugs.** "Dozens of times" above is a signal for *severity* (High), not a bar for *inclusion in the report* — a shape repeated only 6-10 times might be a legitimate per-block cost, or might be an early-stage N+1 that gets much worse as the catalog/data grows (see the size-scaling diagnostic in `references/per-page-type-audit.md`). List anything repeated more than ~5 times per page load in the Audit Report Template's Repeated Query Shapes table (`references/report-template.md`) and let that table's Assessment column carry the judgment call — don't silently drop a borderline case from the report because it doesn't look like a clear bug yet.
+
 ## Slow Query Analysis
 
 The query-count/N+1 audit above catches queries that run *too often*; it says nothing about queries that are individually slow (a missing index, an expensive JOIN, a huge unbounded scan) — those need their own check, and they matter even when the total query count looks healthy. Two complementary levels, cheapest first:
@@ -114,25 +116,11 @@ Read the `type` and `key` columns first — `type: ALL` (full table scan) or an 
 
 > **Local dev DBs are small and fast** — the absolute query *time* on a local box will often look fine (tens of milliseconds total) even when the query *count* is far over budget, and a query that would be a real `type: ALL` full-scan problem on production's actual row counts can run in a few ms locally with a table of 50 rows. Raw count is what matters for the N+1 check above; for this slow-query check, don't trust a fast local `EXPLAIN` on a near-empty table as proof the query is fine at production scale — check `type`/`key` on the query plan itself, not just how fast it happened to run against this box's data.
 
-## HTML Profiler (per-request timing breakdown)
+## Block/template timing is a separate signal
 
-```bash
-# Enable the code profiler with HTML output
-govard sh -c "bin/magento dev:profiler:enable html"
-
-# IMPORTANT: the profiler only activates if the request's Accept header contains "text/html" —
-# a bare `curl -s` without this header will produce NO profiler output at all (this is checked
-# in app/bootstrap.php). Always include it, along with a realistic UA/Accept (see warning above)
-# and a status check:
-curl -sk -H "Accept: $ACCEPT" -A "$UA" -o page.html -w "%{http_code}\n" https://store.test/
-
-# The profiler table is appended near the end of the HTML response body (a
-# `<table border="1">...</table>` with columns: Timer Id, Time, Avg, Cnt, Emalloc, RealMem).
-# Timer Id values use "->" as a nesting separator and are also embedded in each cell's
-# `title="..."` attribute — if parsing programmatically, match on `<td title="[^"]*">(.*?)</td>`,
-# not a naive `<td[^>]*>`, since the nesting arrows inside the attribute value will break a
-# naive parser that treats any ">" as the tag's end.
-
-# Disable when done
-govard sh -c "bin/magento dev:profiler:disable"
-```
+Query count and query time only cover SQL — a page can be slow because of expensive *PHP* work
+in a block or template (a heavy constructor, per-item template logic, a synchronous API call)
+that never touches the database at all, and none of the above will show it. That's a distinct
+signal captured via the HTML profiler during the same page load — see
+`references/html-profiler-audit.md` for how to enable it, read the timing table, and trace
+custom-code cost.

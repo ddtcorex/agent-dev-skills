@@ -51,10 +51,50 @@ Always state the exact URLs tested, not just "homepage/category/product" — wit
 
 ## Database
 - [ ] Query count recorded for homepage/category/product (uncached — see Per-Page-Type Audit) and compared against this project's baseline if one exists, or the tier table under Query Count: Tiers, Not a Pass/Fail Gate if this is the first audit
-- [ ] No N+1 queries detected (same query shape repeated many times in one page's `var/debug/db.log`)
+- [ ] Repeated Query Shapes table below is populated — every shape appearing more than ~5 times on any single page load is listed, not just the ones already confirmed as bugs (or explicitly stated: none found)
 - [ ] Note: on a small/fast local DB, absolute query time can look fine even when count is over budget — flag on count, not just time
 - [ ] Note: this count only covers the initial server-rendered HTML request — it does not include the page's own client-side AJAX/GraphQL follow-up calls (see Client-Side AJAX Load above). A low DB query count does not mean low total backend cost if the page defers real work to those follow-up requests instead of the initial render — report both together, not the DB count in isolation.
 - [ ] Slow Query Analysis run (app-level `TIME:` sort and/or MySQL slow_query_log) — any query found `EXPLAIN`ed to confirm `type: ALL`/missing index before reporting it as a real finding, and slow_query_log turned back off afterward if it was enabled for this audit
+
+### Repeated Query Shapes
+
+List every normalized query shape (ignore literal values, same shape = same normalized SQL) that
+repeats more than ~5 times on any single captured page load — even ones that turn out to be
+legitimate. A high repeat count alone isn't proof of a bug, but leaving a repeated shape out of
+the report because it "probably isn't a bug" is exactly the silent judgment call this table
+exists to prevent — the reader should see the evidence and be able to judge it themselves.
+
+| Shape (normalized) | Page(s) seen on | Count (per page) | Traced to (file:line) | Assessment |
+|---|---|---|---|---|
+| `SELECT * FROM catalog_product_entity_varchar WHERE ...` | category_large only | 210 | `Vendor/Module/Block/Reviews.php:82` | Scales with grid size across the 3 category samples — real N+1, see Per-Page-Type Audit |
+| `SELECT * FROM cms_block WHERE identifier = ?` | all 7 pages | 3 each | `Vendor/Widget/Block/Footer.php:41` | Same shape on every page type — global block, fix once for site-wide impact |
+
+If no shape repeats more than the threshold on any captured page, state that explicitly here
+(`No query shape repeated more than 5 times on any captured page`) — an empty table with no
+comment reads as "not checked," not as "checked, found nothing."
+
+Cross-reference the two diagnostic signals from `references/per-page-type-audit.md`
+("Interpreting results correctly") in the Assessment column rather than just noting the raw
+count: a shape repeated across *all* page types points to a global block (site-wide fix); a
+shape whose count scales with the small/medium/large category (or product-list) samples points
+to a per-item loop that gets worse as the catalog grows.
+
+## Block/Template Rendering (HTML Profiler)
+- [ ] Slowest Blocks/Templates table below is populated for every captured page — every timer using more than ~5% of that page's total time, or firing double-digit-or-higher `Cnt`, is listed (or explicitly stated: none found)
+
+### Slowest Blocks/Templates
+
+List every profiler timer that meets the threshold above — see `references/html-profiler-audit.md`
+for what each column means and how to trace a timer to custom code.
+
+| Timer Id | Page(s) | Time | Cnt | Custom code? | Assessment |
+|---|---|---|---|---|---|
+| `...->Vendor\Module\Block\Reviews::_toHtml` | product_2, product_3 | 1.2s | 1 | Yes (`app/code`) | Single expensive call, `Cnt: 1` — heavy constructor or synchronous API call, see Code-Level Performance Patterns |
+| `...->Magento\Catalog\Block\Product\ListProduct::_toHtml` | category_large | 0.4s | 24 | No (core, but `Cnt` is high) | Per-item render loop — check for a plugin adding per-product work |
+
+If no timer meets the threshold on any captured page, state that explicitly here (`No block/
+template timer exceeded the threshold on any captured page`) — same rule as the Repeated Query
+Shapes table above: an empty table with no comment reads as "not checked."
 
 ## Core Web Vitals
 | Metric | Value | Status |
