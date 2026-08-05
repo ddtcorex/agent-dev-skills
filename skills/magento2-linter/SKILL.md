@@ -35,6 +35,53 @@ composer require --dev magento/magento-coding-standard --no-interaction
 composer require --dev bitexpert/phpstan-magento --no-interaction
 ```
 
+## Check the Project's Real CI Setup First
+
+Don't assume a bare `vendor/bin/phpcs` / `vendor/bin/phpstan` invocation matches what the
+project's CI pipeline actually enforces. Many teams wrap these tools in a shared script or CI
+template that installs Magento-aware PHPStan extensions, changes exclusions, or installs the
+module in isolation — none of which show up if you just run the tools directly against the code
+sitting inside a large host project.
+
+**On one real audit**, `phpstan.neon` had inline `@phpstan-ignore` comments. A bare local
+`vendor/bin/phpstan` run (no extensions installed) reported them as "unmatched" — looking stale,
+since nothing in that run triggered the errors they were suppressing — and they got deleted as
+cleanup. The project's actual CI ran a wrapper script that installed
+`bitexpert/phpstan-magento` (the extension this skill's own Prerequisites section already lists) —
+a Magento-aware PHPStan extension that resolves magic getters/setters and factory return types
+that vanilla PHPStan can't see. With the extension active, those exact lines fired again as real
+errors; the "cleanup" had silently reopened them. Two habits prevent this:
+
+1. **Search for the project's CI config before trusting a local run**: `.gitlab-ci.yml`,
+   `.github/workflows/`, or a referenced shared template/script. If it calls a wrapper script
+   (not the raw binaries), read that script — it's the actual spec for what "passing" means,
+   not whatever flags feel conventional for a bare `phpstan analyse`.
+2. **Install the same PHPStan extensions the CI does** (check the wrapper script or a shared CI
+   template for `phpstan/extension-installer` plus any `*/phpstan-*` packages, e.g.
+   `bitexpert/phpstan-magento`) before deciding an `@phpstan-ignore` comment is stale or a
+   finding is a false positive. A bare install without Magento-aware extensions reports far more
+   "undefined method" noise than real CI ever sees, AND can hide real findings that only surface
+   once those extensions are active — verify both ways before touching an ignore list.
+
+## Standalone Composer Packages Need Isolated Verification
+
+If the module under test is a standalone Composer package (own `composer.json`, developed as its
+own git repo, installed into a host project's `vendor/<vendor>/<package>`) rather than an
+in-project `app/code/` module, running phpcs/phpstan against it *nested inside* a large host
+project can give misleading results in both directions:
+- PHPStan may resolve the host project's own `generated/code/` factory classes and report a
+  narrower set of errors than the package's own CI ever sees, because a standalone package
+  install has no `generated/` directory at all (no `bin/magento` context to generate one).
+- Conversely it may fail to resolve classes the package's own dependency tree would otherwise
+  provide, because the host project's autoloader silently takes precedence.
+
+To match what real per-package CI actually sees, install the module **in isolation** first: copy
+it (excluding `.git`, `vendor`, `composer.lock`) into a scratch directory, run
+`composer install --no-dev` there against its own `composer.json`, and run phpcs/phpstan against
+that isolated copy instead of (or in addition to) the nested `vendor/` path. This is exactly what
+a package-level CI runner typically does, and it's the only way to catch host-project-only false
+negatives/positives before they surface in the real pipeline.
+
 ## Capabilities
 
 ### 1. PHPCS (Magento2 Ruleset)

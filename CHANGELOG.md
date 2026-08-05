@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-08-05
+
+### Added
+- `magento2-linter`: new **Check the Project's Real CI Setup First** section — a real audit
+  removed `@phpstan-ignore` comments as "stale" based on a bare local `vendor/bin/phpstan` run,
+  not realizing the project's actual CI installed `bitexpert/phpstan-magento` (a Magento-aware
+  extension already listed in this skill's own Prerequisites), which resolves the exact patterns
+  those comments were suppressing. Documents searching for the project's real CI config/wrapper
+  script and matching its installed PHPStan extensions before trusting a bare local run or
+  touching an ignore list.
+- `magento2-linter`: new **Standalone Composer Packages Need Isolated Verification** section —
+  linting a standalone Composer package (its own `composer.json`, developed as its own git repo)
+  nested inside a large host project's `vendor/` can both hide and fabricate findings, because the
+  host project's `generated/code/` and autoloader don't match what the package's own isolated CI
+  install would see. Documents copying the package to a scratch directory and running
+  `composer install --no-dev` there before linting, matching how per-package CI actually verifies it.
+
 ## [0.4.1] - 2026-07-31
 
 ### Added
