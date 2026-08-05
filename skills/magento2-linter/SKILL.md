@@ -82,6 +82,31 @@ that isolated copy instead of (or in addition to) the nested `vendor/` path. Thi
 a package-level CI runner typically does, and it's the only way to catch host-project-only false
 negatives/positives before they surface in the real pipeline.
 
+> **`cd` into the scratch directory before invoking phpstan — isolating the `vendor/` being
+> analysed isn't enough on its own.** PHPStan auto-detects `vendor/autoload.php` relative to the
+> *current working directory*, not relative to wherever `-c`/`--configuration` points. On one
+> real check, phpstan was invoked as `php <tools>/vendor/bin/phpstan analyse -c
+> <scratch>/magelint.neon <scratch>` from the *host* project's directory — it silently picked up
+> the host's own `vendor/autoload.php` (which had `phpunit/phpunit` installed for the host's own
+> test suite) instead of the scratch copy's. The isolated check reported 0 errors; the real CI,
+> run directly, reported 121 — every test class extending PHPUnit's `TestCase` had cascaded into
+> "undefined method" findings once the *actual* isolated autoloader (with no PHPUnit available)
+> was in play. Always `cd` into the scratch directory first, then invoke phpcs/phpstan from
+> there — don't just point `-c`/a target path at it from elsewhere.
+
+> **A standalone package's `Test/` directory can be unanalysable under a real `--no-dev` CI
+> install, even with correct isolation.** `phpunit/phpunit` is what makes
+> `Magento\Framework\TestFramework\Unit\BaseTestCase` (and `PHPUnit\Framework\TestCase` itself)
+> resolvable, but it only belongs in `require-dev` — and `--no-dev` skips it, so a package that
+> never explicitly requires it (the common case: Magento doesn't force this dependency on you)
+> will always fail to resolve every test class once truly isolated, independent of anything in
+> the package's own code. Putting `phpunit/phpunit` in a real `require` "fixes" this but bloats
+> every production install of the package with a test framework — not a trade worth making just
+> to satisfy a lint pass. If the CI's install step can't be changed to include dev dependencies,
+> the pragmatic fix is excluding `Test/` from that package's own `phpstan.neon`
+> (`excludePaths: [Test/*]`) with a comment explaining why, rather than chasing a dependency
+> placement that doesn't actually fix anything under `--no-dev`.
+
 ## Capabilities
 
 ### 1. PHPCS (Magento2 Ruleset)

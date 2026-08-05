@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.3] - 2026-08-05
+
+### Fixed
+- `magento2-linter`: the "Standalone Composer Packages Need Isolated Verification" section added
+  in v0.4.2 was itself followed incorrectly the very next time it was used: phpstan was invoked
+  against an isolated scratch copy without first `cd`-ing into it, so it silently loaded the
+  *host* project's `vendor/autoload.php` (which had `phpunit/phpunit` installed) instead of the
+  scratch copy's. The isolated check reported 0 errors; the real CI, run directly, reported 121 —
+  every PHPUnit-based test class had cascaded into "undefined method" findings once the actually
+  isolated autoloader was in play. Added an explicit callout that isolating `vendor/` isn't
+  enough — the working directory has to be isolated too, since PHPStan resolves
+  `vendor/autoload.php` relative to cwd, not to `-c`'s location.
+
+### Added
+- `magento2-linter`: documents a related, common case this incident surfaced — a standalone
+  package's `Test/` directory can be legitimately unanalysable under a real `--no-dev` CI install
+  when the package never declares `phpunit/phpunit` (common, since Composer doesn't force this).
+  Recommends excluding `Test/` from that package's own `phpstan.neon` with an explanatory
+  comment, rather than adding `phpunit/phpunit` to a real `require` just to satisfy CI (which
+  would bloat every production install of the package).
+
 ## [0.4.2] - 2026-08-05
 
 ### Added
