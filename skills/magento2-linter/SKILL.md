@@ -23,6 +23,21 @@ This skill runs automated code quality checks to verify Magento 2 coding standar
 
 Part of the QA trio with `magento2-security-scan` (deeper vulnerability scanning) and `magento2-performance-audit` (runtime/infrastructure checks) — run all three before a release. Fix findings using the patterns in `magento2-dev-core` (or the relevant frontend/backend/Hyvä skill).
 
+## Real CI Verification Is Mandatory Before Pushing
+
+If the project has a real CI wrapper for linting (e.g. Sutunam's `magelint` — see "Check the
+Project's Real CI Setup First" below), running it for real is a **required step before pushing or
+opening a PR/MR, not an optional nice-to-have**. A local approximation (isolated scratch install,
+`bootstrapFiles` pointed at a host project's autoload, or any other stand-in for the actual
+per-PHP-version isolated install the CI runs) is a fast pre-check to catch obvious problems early
+— it is not proof the branch is clean, because it can diverge from the real run in either
+direction (see the finding-triage callout under "Check the Project's Real CI Setup First").
+
+Before telling the user a branch is "verified" or "ready to push": either run the real CI
+wrapper yourself if credentials/access allow, or explicitly ask the user to run it and wait for
+the result. Never substitute a local approximation's "0 errors" for that confirmation, and never
+present local-only results as if they were the real gate having passed.
+
 ## Prerequisites
 
 Ensure the project has required tools:
@@ -62,6 +77,13 @@ errors; the "cleanup" had silently reopened them. Two habits prevent this:
    finding is a false positive. A bare install without Magento-aware extensions reports far more
    "undefined method" noise than real CI ever sees, AND can hide real findings that only surface
    once those extensions are active — verify both ways before touching an ignore list.
+
+> **New findings that share an error message with an already-tolerated pattern still need their
+> own check — don't dismiss a whole batch by shape alone.** On one real fix, several new findings
+> got bucketed with older, already-accepted ones as "same pattern, not worth fixing." The real CI
+> run disagreed: only one of the *dismissed* findings actually failed it, and none of the old ones
+> it was grouped with did. Verify each new finding against what real CI reports, not against how
+> similar its wording looks to already-tolerated noise.
 
 ## Standalone Composer Packages Need Isolated Verification
 
@@ -106,6 +128,13 @@ negatives/positives before they surface in the real pipeline.
 > the pragmatic fix is excluding `Test/` from that package's own `phpstan.neon`
 > (`excludePaths: [Test/*]`) with a comment explaining why, rather than chasing a dependency
 > placement that doesn't actually fix anything under `--no-dev`.
+
+> **When the package uses a `src/`-rooted PSR-4 layout, `Test/` belongs inside `src/`, not next to
+> it.** If `composer.json` maps the module's namespace to `src` (e.g. `"Vendor\\Module\\": "src"`),
+> test classes need that same root to autoload — so `Test/` has to live at `src/Test/...`, not as
+> a sibling directory at the package root. Placed outside `src/`, it silently fails to autoload,
+> and a phpstan config scoped to `paths: [src]` will skip it entirely without any error, giving a
+> false sense of full coverage.
 
 ## Capabilities
 

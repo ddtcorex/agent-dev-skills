@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.4] - 2026-08-06
+
+### Added
+- `magento2-linter`: new **Real CI Verification Is Mandatory Before Pushing** section — running a
+  project's real CI lint wrapper (e.g. Sutunam's `magelint`) is now a required step before
+  pushing or opening a PR/MR, not an optional nice-to-have. A local approximation is a fast
+  pre-check only; it must never be presented as proof the branch is clean.
+- `magento2-linter`: new callout — when a standalone package uses a `src/`-rooted PSR-4 layout,
+  `Test/` must live inside `src/` (e.g. `src/Test/...`), not as a sibling directory at the package
+  root, or it silently fails to autoload and gets skipped entirely by a `paths: [src]`-scoped
+  phpstan config.
+
+### Fixed
+- `magento2-linter`: new callout — new findings sharing an error message with an already-tolerated
+  pattern still need their own check against real CI, not a blanket dismissal by shape. On one real
+  fix, a batch of new findings got bucketed with older, accepted ones as "same pattern"; the real
+  CI run disagreed on one of them.
+
 ## [0.4.3] - 2026-08-05
 
 ### Fixed
