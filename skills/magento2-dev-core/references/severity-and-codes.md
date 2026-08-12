@@ -35,7 +35,6 @@ not a rewording of an existing row.
 | M2-SEC-002 | XSS, stored (unescaped database content in output) | Critical |
 | M2-SEC-003 | XSS, reflected (unescaped user input in output) | High |
 | M2-SEC-004 | Command injection (system command execution with user input) | Critical |
-| M2-SEC-005 | `ObjectManager::getInstance()` used as a service locator | Critical |
 | M2-SEC-006 | `$_GET`/`$_POST`/`$_REQUEST` superglobal access | High |
 | M2-SEC-007 | `eval()` / dynamic code execution | Critical |
 | M2-SEC-008 | `base64_decode()` on user input (obfuscation) | High |
@@ -47,6 +46,14 @@ not a rewording of an existing row.
 vulnerability categories both feed this same namespace — a pattern that
 appears in both (e.g. `ObjectManager::getInstance()`, raw SQL) is the same
 code in either report, not two different ones.
+
+`ObjectManager::getInstance()` used as a service locator has **no** M2-SEC
+code — it is filed under `M2-ARCH-001` above even when a security-oriented
+grep (in `magento2-linter` or `magento2-security-scan`) is what actually
+surfaces it. `M2-SEC-005` is intentionally absent from this list, not an
+accidental gap: an earlier draft of this table minted it as a second code
+for the exact same pattern `M2-ARCH-001` already covers, which the "map to
+an existing code first" rule above exists specifically to prevent.
 
 ## `M2-PERF-xxx` — performance findings (`magento2-performance-audit`)
 
