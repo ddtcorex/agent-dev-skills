@@ -3,7 +3,8 @@ name: govard-magento
 description: |
   This skill should be used when the user asks to "clear Magento cache", "flush redis cache",
   "run Magento CLI", "run bin/magento commands", "deploy static content", "setup:di:compile",
-  "reindex catalog", "run indexer commands", or "enable/disable modules". Provides
+  "reindex catalog", "run indexer commands", "enable/disable modules", "start frontend sync",
+  "run browser-sync", "set up live reload for Hyva/Luma", or "govard frontend". Provides
   Magento-specific Govard shortcuts and commands. DEPENDENT on govard-toolbox for base commands.
 compatibility: claude, codex, opencode, copilot
 depends: [govard-toolbox]
@@ -108,6 +109,30 @@ govard sh -c "bin/magento dev:query-log:disable"
 govard sh -c "bin/magento dev:js:enable_js_bundling"
 govard sh -c "bin/magento dev:css:minify_files"
 ```
+
+## Frontend Development (BrowserSync / LiveReload)
+
+Requires `stack.features.frontend_sync: true` in `.govard.yml` (Magento 2 / Mage-OS only). `govard env up` never starts this — it's a separate, explicit, on-demand lifecycle:
+
+```bash
+govard env up                    # app/db/etc. up — no frontend services yet
+govard frontend start            # renders + starts BrowserSync/LiveReload + watchers
+govard frontend logs -f          # sync/injector container
+govard frontend logs watch-<theme> -f
+govard frontend stop             # removes only frontend services, keeps their volumes
+```
+
+**Prerequisites (Govard never creates or edits these files):**
+- **Hyva:** exactly one `scripts.browser-sync` owner under `app/design/frontend/<Vendor>/<Theme>/web/tailwind`, with a committed `package-lock.json`. The theme's own `browser-sync.config.js` must read `GOVARD_FRONTEND_SYNC_TARGET`/`_PORT` from the environment and set `changeOrigin: false`, `cookies.stripDomain: false`, `open: false`, and `socket.path: '/browser-sync/socket.io'`.
+- **Luma:** root `Gruntfile.js`, `package.json`, `package-lock.json` (copy Magento's `.sample` files, then `npm install`). No BrowserSync config needed.
+- Hyva and Luma discovery are mutually exclusive project-wide — only one setup may be valid at a time.
+
+**Switching the active Hyva theme:** move the `scripts.browser-sync` entry (plus its `browser-sync.config.js` and `package-lock.json`) from the old theme's `web/tailwind/package.json` to the new theme, then run `govard frontend start` again — it re-discovers whichever theme is now the sole owner.
+
+| Symptom | Fix |
+|---|---|
+| `frontend start` reports success but the page redirects to a different host or drops the session | Theme's `browser-sync.config.js` has `changeOrigin`/`cookies.stripDomain` wrong — both must be `false` |
+| Discovery fails ("no owner found" / conflicting setups) | Confirm exactly one theme owns `scripts.browser-sync`, and that Hyva and Luma prerequisites aren't both satisfied at once |
 
 ## Database Operations
 

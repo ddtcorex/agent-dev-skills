@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.5] - 2026-08-12
+
+### Added
+- `govard-magento`: new **Frontend Development (BrowserSync / LiveReload)** section covering
+  `govard frontend start/logs/stop`, the `stack.features.frontend_sync` prerequisite, Hyva vs.
+  Luma discovery requirements (mutually exclusive, exactly one `scripts.browser-sync` owner for
+  Hyva), the `browser-sync.config.js` settings that must be correct (`changeOrigin: false`,
+  `cookies.stripDomain: false`) to avoid breaking Magento's base-URL redirect or session cookies,
+  and how to switch the active Hyva theme. Also adds matching trigger phrases ("start frontend
+  sync", "run browser-sync", "govard frontend") to the skill description, which previously had no
+  way to match this workflow at all.
+
 ## [0.4.4] - 2026-08-06
 
 ### Added
