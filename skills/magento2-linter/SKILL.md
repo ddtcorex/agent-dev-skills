@@ -168,7 +168,7 @@ Scans for common anti-patterns that PHPCS might miss.
 
 | Pattern | Issue | Risk | Code |
 |---------|-------|------|------|
-| `SELECT * FROM` | Direct SQL | High | M2-SEC-001 |
+| `SELECT * FROM` | Direct SQL | Medium | M2-ARCH-004 |
 | `ObjectManager::getInstance` | Service Locator | Critical | M2-ARCH-001 |
 | `$_GET`, `$_POST`, `$_REQUEST` | Superglobal access | High | M2-SEC-006 |
 | `eval()` | Code execution | Critical | M2-SEC-007 |
@@ -176,10 +176,15 @@ Scans for common anti-patterns that PHPCS might miss.
 | `file_get_contents($userInput)` | Path traversal | High | M2-SEC-009 |
 
 Full scale and code catalogue: `magento2-dev-core/references/severity-and-codes.md`.
-`ObjectManager::getInstance` cites `M2-ARCH-001` (dev-core's architecture
-namespace) rather than a security code — it's the same underlying pattern
-`magento2-dev-core` already catalogues, cited from here rather than
-duplicated under a second code.
+Two rows cite `M2-ARCH-xxx` codes rather than a `M2-SEC-xxx` one:
+`ObjectManager::getInstance` cites `M2-ARCH-001` — the same underlying
+pattern `magento2-dev-core` already catalogues, cited from here rather than
+duplicated under a second code. `SELECT * FROM` cites `M2-ARCH-004` ("Raw
+SQL outside a ResourceModel") rather than `M2-SEC-001` ("SQL Injection... with
+user input") — this bare-string grep can't confirm user input is actually
+involved, so it's the weaker raw-SQL-usage finding, not a confirmed
+injection; `magento2-security-scan`'s own SQL Injection checks (which do
+correlate with user input) are what earns `M2-SEC-001`.
 
 ### 4. PHPMD (Code Smell & Complexity)
 
