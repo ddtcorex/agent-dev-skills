@@ -5,7 +5,7 @@ already cover, and defines only what doesn't exist anywhere else yet.
 
 ## 1. Detect Hyvä vs. Luma
 
-Reuse `magento2-hyva-dev`'s "Detect the project's actual setup first"
+Reuse `magento2-hyva-dev`'s "Related Skills"
 section: check the theme's `theme.xml` parent (`Hyva/default`/`Hyva/reset`
 vs `Magento/blank`) and `composer.json` for `hyva-themes/*` packages. The two
 stacks are mutually exclusive.
@@ -17,6 +17,10 @@ stacks are mutually exclusive.
 - Core Web Vitals / JS-hydration-delay: `magento2-performance-audit`'s
   `references/core-web-vitals.md` — run scoped to just this theme's page
   types, not the full 9-step project audit.
+
+Findings from either of these two checks are tagged `M2-SEC-010` and
+`M2-PERF-006` respectively — not a `M2-THEME` code, which is reserved for
+the genuinely new checks in sections 3-4 below.
 
 ## 3. Hyvä — new checks (nothing else covers these today)
 
