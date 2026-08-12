@@ -166,14 +166,53 @@ Scans for common anti-patterns that PHPCS might miss.
 
 **Detected patterns:**
 
-| Pattern | Issue | Risk |
-|---------|-------|------|
-| `SELECT * FROM` | Direct SQL | High |
-| `ObjectManager::getInstance` | Service Locator | High |
-| `$_GET`, `$_POST`, `$_REQUEST` | Superglobal access | High |
-| `eval()` | Code execution | Critical |
-| `base64_decode` on user input | Obfuscation | High |
-| `file_get_contents($userInput)` | Path traversal | High |
+| Pattern | Issue | Risk | Code |
+|---------|-------|------|------|
+| `SELECT * FROM` | Direct SQL | High | M2-SEC-001 |
+| `ObjectManager::getInstance` | Service Locator | Critical | M2-ARCH-001 |
+| `$_GET`, `$_POST`, `$_REQUEST` | Superglobal access | High | M2-SEC-006 |
+| `eval()` | Code execution | Critical | M2-SEC-007 |
+| `base64_decode` on user input | Obfuscation | High | M2-SEC-008 |
+| `file_get_contents($userInput)` | Path traversal | High | M2-SEC-009 |
+
+Full scale and code catalogue: `magento2-dev-core/references/severity-and-codes.md`.
+`ObjectManager::getInstance` cites `M2-ARCH-001` (dev-core's architecture
+namespace) rather than a security code — it's the same underlying pattern
+`magento2-dev-core` already catalogues, cited from here rather than
+duplicated under a second code.
+
+### 4. PHPMD (Code Smell & Complexity)
+
+Catches cyclomatic complexity, unused code, and code smells that PHPCS
+(style) and PHPStan (types) don't check for — a 200-line method or a
+15-parameter constructor passes both of those clean.
+
+**Prerequisite:**
+
+```bash
+composer require --dev phpmd/phpmd --no-interaction
+```
+
+**Run it:**
+
+```bash
+govard sh -c "vendor/bin/phpmd app/code/Vendor/Module text phpmd.xml"
+```
+
+**What it checks (default ruleset — tune via a project `phpmd.xml`):**
+
+| Check | Flags |
+|---|---|
+| Cyclomatic complexity | Methods with too many branches/paths |
+| NPath complexity | Combinatorial explosion of execution paths |
+| Excessive method/class length | Methods/classes past a line-count threshold |
+| Excessive parameter lists | Constructors/methods with too many parameters |
+| Unused code | Unused local variables, parameters, private methods/fields |
+| Naming | Short/non-descriptive variable names |
+
+No auto-fix — every PHPMD finding needs a manual refactor (usually: extract
+method, reduce constructor dependencies via a factory/proxy, or delete dead
+code).
 
 ## Usage
 
@@ -214,6 +253,29 @@ vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module --extensions=xml,xsl
 govard sh -c "vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module"
 govard sh -c "vendor/bin/phpstan analyse app/code/Vendor/Module -c phpstan.neon"
 ```
+
+## Scoping
+
+Accepts either a directory (the examples above) or an explicit space-separated
+file list — both PHPCS and PHPStan take file arguments natively:
+
+```bash
+vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module/Model/Foo.php app/code/Vendor/Module/Model/Bar.php
+vendor/bin/phpstan analyse app/code/Vendor/Module/Model/Foo.php app/code/Vendor/Module/Model/Bar.php -c phpstan.neon
+```
+
+The Security Pattern Detection greps need the same file list looped instead
+of a directory glob:
+
+```bash
+for f in app/code/Vendor/Module/Model/Foo.php app/code/Vendor/Module/Model/Bar.php; do
+  grep -Hn "ObjectManager::getInstance\|\$_GET\|\$_POST\|\$_REQUEST\|eval(" "$f"
+done
+```
+
+`magento2-code-review` derives this file list from a git diff or an MR fetch
+and calls this skill with it directly — the git/glab mechanics themselves
+live there, not here.
 
 ## Interpreting Results
 
