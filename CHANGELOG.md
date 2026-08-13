@@ -4,6 +4,34 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.10] - 2026-08-13
+
+### Added
+- `magento2-linter`: the same "try `composer install` before concluding
+  coverage is blocked" habit added for phpcs's `installed_paths` in 0.4.9
+  now also documented for PHPStan — a diff that adds a new `composer.json`
+  require reports every method on the unresolved class as undefined,
+  identical in appearance whether the package genuinely needs live
+  private-repo credentials or is already sitting in `composer.lock`/the
+  local Composer cache from a prior install elsewhere in the same
+  environment. Run `composer install` first; only report PHPStan coverage
+  as blocked if it actually fails or prompts for credentials you don't
+  have.
+- `magento2-linter`: a new callout under "PHPStan Output" on
+  `Call to an undefined method Vendor\Class::setFoo()/getFoo()` as a
+  distinct, common false-positive class — almost every Magento Block/Model
+  extends `DataObject`'s magic `get*`/`set*`/`has*`/`unset*` accessors,
+  which PHPStan can't see without `bitexpert/phpstan-magento`. Documents
+  the actual technique for telling a real bug from this noise: look for a
+  working precedent of the exact same method on the exact same class (or a
+  clearly-related sibling) elsewhere in the codebase. Includes a real
+  worked example from a live review — one such finding was the legitimate
+  magic-accessor pattern (confirmed via a working vendor precedent), a
+  second, superficially identical-looking finding on an unrelated method
+  name was a real, previously-undetected bug (no precedent existed on that
+  class's actual ancestor chain — it silently returned empty instead of
+  throwing).
+
 ## [0.4.9] - 2026-08-13
 
 ### Fixed

@@ -73,6 +73,29 @@ report the ruleset as genuinely unavailable (an environment gap worth
 surfacing in a review's Coverage note) if it's absent from `composer.lock`
 entirely or `composer install` doesn't fix the registration.
 
+**The same "try `composer install` before concluding coverage is blocked"
+check applies to PHPStan when a reviewed diff adds a new `composer.json`
+require.** A PHPStan run against a class that extends an unresolved
+dependency reports every single method on it as undefined — `Class X
+extends unknown class Y`, then every inherited call cascades into `Call to
+an undefined method`. That looks identical whether the package genuinely
+needs live private-repo credentials to resolve, or is already sitting in
+`composer.lock`/the local Composer cache from a prior `composer install`
+elsewhere in the same environment (dependencies get cached by version, not
+by branch). Don't assume the latter requires network access you don't have
+— run `composer install` first and see what actually happens:
+
+```bash
+composer install --no-interaction   # uses the existing lock file, doesn't re-resolve
+vendor/bin/phpstan analyse app/code/Vendor/Module -c phpstan.neon --memory-limit=1G
+```
+
+If it installs from cache with no prompt, re-run PHPStan — the "every
+method undefined" noise for that dependency should disappear, and whatever
+errors remain are real. Only report "PHPStan couldn't run, new dependency
+not installed" in a review's Coverage note if `composer install` actually
+fails or prompts for credentials you don't have.
+
 ## Check the Project's Real CI Setup First
 
 Don't assume a bare `vendor/bin/phpcs` / `vendor/bin/phpstan` invocation matches what the
@@ -411,6 +434,34 @@ FOUND 3 ERRORS AFFECTING 2 LINES
 
  [ERROR] 1 error
 ```
+
+**`Call to an undefined method Vendor\Class::setFoo()`/`getFoo()` is a
+common false positive**, not just noise from missing extensions in
+general — specifically, almost every Magento Block/Model class extends
+`Magento\Framework\DataObject` (directly or via `AbstractBlock`/
+`AbstractModel`), which implements a magic `__call()` covering arbitrary
+`get*`/`set*`/`has*`/`unset*` accessors backed by an internal data array.
+`bitexpert/phpstan-magento` teaches PHPStan about this; without it, every
+such call reports as undefined, real or not. Before accepting *or*
+rejecting one of these findings, look for a **working precedent of the
+exact same method name on the exact same class (or a sibling that clearly
+shares the pattern) elsewhere in the codebase** — a genuinely-working
+`$obj->setRows($x)` / `$obj->getRows()` pair used successfully by other
+callers of the same class is strong evidence it's a real (if PHPStan-blind)
+magic accessor, not a defect. Conversely, a method call with no such
+precedent anywhere in the class's actual ancestor chain — especially one
+copied from a *different, unrelated sibling class* that happens to define
+its own same-named real method — is worth escalating rather than dismissing
+as "probably just PHPStan noise." On one real review, `Renderer::setRows()`
+turned out to be the legitimate magic-accessor pattern (the vendor's own
+`Rows.php`/`MultiService.php` call it identically, and its own
+`.phtml` template consumes it via `getRows()`), while a sibling class's
+`$this->getLinkUrl($url)` call — no such method existed anywhere in *that*
+class's ancestor chain, only on unrelated sibling widget classes that each
+define their own — was a real, previously-undetected bug: it silently fell
+through to the magic getter and always returned an empty URL instead of
+throwing, making it easy to miss without checking the ancestor chain
+directly.
 
 ### Security Findings
 
