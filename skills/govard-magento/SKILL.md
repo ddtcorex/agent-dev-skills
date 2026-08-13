@@ -140,8 +140,9 @@ govard frontend stop             # removes only frontend services, keeps their v
 # Direct MySQL
 govard db connect
 
-# Run SQL
-govard db query "SELECT * FROM m2_core_config_data WHERE path LIKE '%template%'"
+# Run SQL -- table names here have no prefix; if this project uses one (db.table_prefix in
+# app/etc/env.php), prepend it, e.g. `m2_core_config_data` instead of `core_config_data`
+govard db query "SELECT * FROM core_config_data WHERE path LIKE '%template%'"
 
 # Import with streaming (fast)
 govard db import --stream-db -e staging --drop

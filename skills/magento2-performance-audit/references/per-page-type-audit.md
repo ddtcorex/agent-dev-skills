@@ -8,7 +8,23 @@ A single-page spot check isn't representative — different page types have very
 
 ## 0. Pick genuinely representative pages first
 
-Before measuring anything, verify the specific URLs you're about to test aren't degenerate cases — this is the single easiest way to get a misleading audit:
+Before measuring anything, verify the specific URLs you're about to test aren't degenerate cases — this is the single easiest way to get a misleading audit.
+
+> **Check for a DB table prefix before running any query below.** Magento 2 supports an optional
+> table prefix (`db.table_prefix` in `app/etc/env.php`, set via `bin/magento setup:install
+> --db-prefix=...` or inherited from a prefixed remote sync) — every bare table name in this file
+> (`catalog_category_product`, `catalog_category_entity`, `catalog_product_website`,
+> `url_rewrite`, `eav_attribute`, etc.) assumes no prefix. Check first:
+> ```bash
+> govard sh -c "grep -A1 \"'table_prefix'\" app/etc/env.php"
+> ```
+> If it's non-empty, prepend it to every table name in every query in this file (and anywhere else
+> in this audit you write ad hoc SQL against app tables — this does not apply to MySQL system
+> tables/variables in `references/database-query-profiling.md`'s slow-query checks, or to
+> `EXPLAIN`ing SQL already captured from the query log, since that SQL already has the real prefix
+> baked in). A query against the bare name on a prefixed install fails loudly ("table doesn't
+> exist"), which at least isn't silent — but don't just retry with a guessed prefix, confirm it
+> from `env.php` first.
 
 ```bash
 # Category: pull a spread of product counts, not just one — you want a small, a medium,

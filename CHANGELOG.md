@@ -33,6 +33,20 @@ All notable changes to this project are documented here. The format follows
   silently wins over the DB row. Use `bin/magento config:show
   web/unsecure/base_url` instead, which resolves the same chain a real
   request does.
+- `magento2-performance-audit`: `per-page-type-audit.md`'s page-selection
+  queries (section 0) now open with a table-prefix check before any SQL —
+  every bare table name in that file (`catalog_category_product`,
+  `catalog_category_entity`, `url_rewrite`, etc.) assumed no `db.table_prefix`
+  configured in `app/etc/env.php`, which fails loudly on a prefixed install.
+  Doesn't apply to `database-query-profiling.md`'s MySQL system-variable
+  checks or to `EXPLAIN`ing already-captured SQL, since that SQL already has
+  the real prefix baked in. Swept the rest of the plugin for the same gap and
+  fixed the two other spots found: `infrastructure-checks.md`'s
+  `cron_schedule` freshness check, and a `core_config_data` example in
+  `govard-magento/SKILL.md` that had hardcoded an `m2_` prefix as if it were
+  universal (it isn't — it depends on that specific install). Also annotated
+  `govard-toolbox/SKILL.md`'s generic query example, which is framework-agnostic
+  and can carry a Magento/WordPress/etc. prefix depending on the project.
 
 ## [0.4.11] - 2026-08-13
 

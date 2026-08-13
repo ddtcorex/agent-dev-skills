@@ -59,7 +59,8 @@ govard restart
 # Connect to MySQL
 govard db connect
 
-# Run query
+# Run query -- table names may need a framework-specific prefix (e.g. Magento's
+# db.table_prefix in app/etc/env.php, WordPress's $table_prefix) if one is configured
 govard db query "SELECT * FROM admin_user LIMIT 1"
 
 # Import dump
