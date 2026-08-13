@@ -64,7 +64,8 @@ a remote-fetch review read as if it ran the same checks as a local one.
 ## Govard-first commands used at this scope
 
 ```bash
-# Pre-flight sanity check before a project/module-scope review
+# Pre-flight sanity check before a project/module-scope review (see
+# govard-magento's Diagnostics section for the full command set)
 govard tool magerun sys:check
 # or the alias:
 govard tool mr sys:check

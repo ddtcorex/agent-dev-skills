@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [0.4.7] - 2026-08-13
 
 ### Added
-- `govard-magento`: `govard tool magerun config:search` (cross-scope config
+- `govard-magento`: `govard tool magerun config:store:get` (cross-scope config
   lookup) added to the Configuration section, and a new **Diagnostics**
   section (`sys:check`, `sys:info`) — both additions alongside the
   existing `bin/magento` commands, nothing replaced.
@@ -25,8 +25,8 @@ All notable changes to this project are documented here. The format follows
   this skillset works best paired with
   [Govard](https://github.com/ddtcorex/govard), with its one-line install
   command, plus a list of the other soft dependencies individual skills
-  assume (n98-magerun2, PHPCS/PHPStan/PHPMD Composer packages, Node/npm,
-  Playwright, Chrome DevTools MCP, GitHub MCP).
+  assume (n98-magerun2, PHPCS/PHPStan/PHPMD and magento/security-package
+  Composer packages, Node/npm, Playwright, Chrome DevTools MCP, GitHub MCP).
 
 ## [0.4.6] - 2026-08-12
 

@@ -164,18 +164,20 @@ govard sh -c "bin/magento config:set design/theme/theme_id 0"
 govard sh -c "bin/magento app:config:dump"
 govard sh -c "bin/magento app:config:import"
 
-# Search a config value across all scopes (default/website/store) in one
+# Show a config value in every scope it's set (default/website/store) in one
 # call -- bin/magento config:show only reads a single scope at a time
-govard tool magerun config:search web/secure/base_url
+govard tool magerun config:store:get web/secure/base_url
 ```
 
 ## Diagnostics
 
 ```bash
-# Quick project health check -- module conflicts, cache/index status, PHP config
+# Environment health check -- missing files/folders, base URL & cookie
+# domain settings, required PHP extensions, MySQL InnoDB
 govard tool magerun sys:check
 
-# System info snapshot (Magento/PHP/DB versions, edition, mode)
+# System snapshot (Magento version/edition, app mode, cache backend,
+# search engine, module count)
 govard tool magerun sys:info
 ```
 
