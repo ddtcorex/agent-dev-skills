@@ -61,6 +61,47 @@ end-to-end through the CLI fallback alone.
 State this limitation explicitly in the report's "Coverage note" — never let
 a remote-fetch review read as if it ran the same checks as a local one.
 
+## Performance/theme checks by scope
+
+Scope gating must never reduce PR/MR-scope performance or theme coverage to
+zero — a diff titled "Optimize AJAX requests," or one touching several Hyvä
+templates, deserves more than "not run because scope isn't project/module."
+Split by whether a check needs a live environment or just the touched files:
+
+**Static, file-scoped — run at every scope, including PR/MR (local diff or
+remote fetch):**
+
+- `magento2-performance-audit/references/code-level-patterns.md`'s grep
+  recipes (Workflow step 8: N+1 shapes, `count($collection)`,
+  `cacheable="false"`) — always, against whatever file list is in scope.
+- If the file list touches `sections.xml`, a Customer Data section
+  provider, or AJAX/reload wiring: read (don't reproduce) the invalidation
+  rules per `magento2-performance-audit/references/ajax-load-audit.md`'s
+  sections.xml checks — there's no Network tab to capture without a
+  running page, so this is a static read of rule breadth, not the live
+  footprint measurement the rest of that workflow step also does.
+- If the file list touches a Hyvä/Luma theme file: the static half of
+  `references/theme-audit-checks.md` — the CSP nonce/pattern check
+  (missing `registerInlineScript()` before an inline `<script>`, per
+  `magento2-hyva-dev`'s CSP section) and the Alpine hydration-root count
+  (`M2-THEME-002`: `grep -o 'x-data' <file>.phtml | wc -l` per touched
+  template) — no build required for either.
+
+**Live/infra, needs a checked-out running environment — project, module, or
+theme scope only; genuinely cannot run against a bare diff or remote
+fetch:**
+
+- `magento2-performance-audit`'s infra checks, per-page-type audit, slow
+  query analysis, cache invalidation trace, and Core Web Vitals trace
+  (Workflow steps 1-3, 4, 5, 7).
+- `references/theme-audit-checks.md`'s Tailwind bundle-size regression
+  (`M2-THEME-001`) and RequireJS/LESS output-size regression
+  (`M2-THEME-003`) — both need a real build/deploy to measure.
+
+At PR/MR scope, state in the report's Coverage note which live/infra checks
+above did not run and why — never let a diff-scope report read as if it
+covered Core Web Vitals or infra when it only ran the static subset.
+
 ## Govard-first commands used at this scope
 
 ```bash

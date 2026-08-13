@@ -111,6 +111,19 @@ done
 and calls this skill with it directly — the git/glab mechanics themselves
 live there, not here.
 
+### Environment-level checks — scope boundary
+
+Authentication & Authorization, Data Exposure, and CSP Configuration
+(sections 2-4 above) are not file-list-scoped at all — they check the
+running environment (`env.php`, a live URL, `bin/magento config:get`), not
+specific files. They cannot run against a PR/MR diff or remote fetch (no
+checked-out environment to query there) and, even at project/module scope,
+run once per audit rather than once per file. `magento2-code-review`
+states explicitly in its Coverage note whether these ran (project/module/
+theme scope, live environment available) or were skipped (PR/MR scope, or
+no environment access this session) — this is never left for whoever's
+running the review to decide silently.
+
 ## XSS Prevention Checklist
 
 - [ ] All output escaped with `$escaper`

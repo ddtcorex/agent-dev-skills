@@ -207,14 +207,16 @@ govard sh -c "vendor/bin/phpmd app/code/Vendor/Module text phpmd.xml"
 
 **What it checks (default ruleset — tune via a project `phpmd.xml`):**
 
-| Check | Flags |
-|---|---|
-| Cyclomatic complexity | Methods with too many branches/paths |
-| NPath complexity | Combinatorial explosion of execution paths |
-| Excessive method/class length | Methods/classes past a line-count threshold |
-| Excessive parameter lists | Constructors/methods with too many parameters |
-| Unused code | Unused local variables, parameters, private methods/fields |
-| Naming | Short/non-descriptive variable names |
+| Check | Flags | Code |
+|---|---|---|
+| Cyclomatic complexity | Methods with too many branches/paths | M2-STYLE-001 |
+| NPath complexity | Combinatorial explosion of execution paths | M2-STYLE-001 |
+| Excessive method/class length | Methods/classes past a line-count threshold | M2-STYLE-002 |
+| Excessive parameter lists | Constructors/methods with too many parameters | M2-STYLE-003 |
+| Unused code | Unused local variables, parameters, private methods/fields | M2-STYLE-004 |
+| Naming | Short/non-descriptive variable names | M2-STYLE-005 |
+
+Full scale and code catalogue: `magento2-dev-core/references/severity-and-codes.md`.
 
 No auto-fix — every PHPMD finding needs a manual refactor (usually: extract
 method, reduce constructor dependencies via a factory/proxy, or delete dead
@@ -284,6 +286,23 @@ and calls this skill with it directly — the git/glab mechanics themselves
 live there, not here.
 
 ## Interpreting Results
+
+The examples below show clean, isolated tool output. On PHP 8.4+ (PHPCS
+3.5.8 and older PHPMD/PHPStan builds included), running these commands for
+real against a modern stack commonly prints dozens of lines of
+`Deprecated: strpos(): Passing null...`-style PHP-8.4-compatibility notices
+mixed in with the actual findings — this is noise from the tool's own code,
+not a project finding, and it does not change the tool's exit code. Never
+judge success/failure by whether the output "looks like" the clean examples
+below; always check the real exit code explicitly:
+
+```bash
+vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module; echo "EXITCODE:$?"
+```
+
+A batch run that's actually clean still exits `0` underneath the
+deprecation noise — an exit-code check is what tells the two apart, not the
+shape of the printed output.
 
 ### PHPCS Output
 
