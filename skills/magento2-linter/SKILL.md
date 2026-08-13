@@ -159,39 +159,64 @@ negatives/positives before they surface in the real pipeline.
 > and a phpstan config scoped to `paths: [src]` will skip it entirely without any error, giving a
 > false sense of full coverage.
 
-## In-Project `app/code/` Modules: Scope With a Path, Don't Isolate Them Alone
+## In-Project `app/code/` Modules: `magelint`-style Wrappers Don't Scope to a Subdirectory
 
 The isolation advice above is for **standalone Composer packages** (own
 `composer.json`, own git repo). An in-project `app/code/Vendor/Module` is
 the opposite case — it has no `composer.json` of its own and depends on the
-*whole host project's* `vendor/` to resolve Magento framework classes, so
-isolating it alone (copying just that directory into a scratch dir, or
-mounting just that directory as a CI tool's project root) fails immediately
-with something like "No composer.json found" — there's nothing there to
-install against.
+*whole host project's* `vendor/` to resolve Magento framework classes.
 
-For a real per-PHP-version CI wrapper like Sutunam's `magelint` (see the
-project's own `CLAUDE.md` for the exact alias), the fix is to mount/run from
-the **project root** — where `composer.json` and the full `vendor/` context
-actually exist — and use the tool's own path-scoping flag to limit the
-actual lint target to the module, instead of trying to make the module
-directory itself the project root:
+**Correction, verified by reading the actual script:** an earlier version of
+this section claimed a CI wrapper's `--path=` flag could mount the project
+root and scope linting to just the module subdirectory
+(`--path=app/code/Vendor/Module`) — that's wrong, and shipped without
+actually running it. Reading Sutunam's `magelint` script directly
+(`docker run --rm --entrypoint sh <image> -c "cat \$(which magelint)"`)
+shows `--path` sets `PROJECT_PATH`, and the very next check is:
 
 ```bash
-# WRONG — mounts only the module dir as the project root; fails immediately
-# with "No composer.json found" because app/code/Vendor/Module has none
-docker run --rm -v "$(pwd)/app/code/Vendor/Module":/app ... magelint --php=8.3
-
-# RIGHT — mount/cd the project root (composer.json lives there), scope the
-# actual lint target with --path
-docker run --rm -v "$(pwd)":/app ... magelint --path=app/code/Vendor/Module --php=8.3
+if [ ! -f "${PROJECT_PATH}/composer.json" ]; then
+    echo "No composer.json found in project at ${PROJECT_PATH}"
+    exit 1
+fi
 ```
 
-Same principle for a bare `vendor/bin/phpcs`/`phpstan` invocation: run it
-from the project root with the module's path as the *target argument*
-(`vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module`, as in
-"Scoping" below) — never `cd` into the module directory first and expect
-either tool to find the project's own `vendor/autoload.php` from there.
+`composer.json` must exist **directly at** whatever `PROJECT_PATH` resolves
+to — there is no "mount a bigger project, scope the lint target to a
+subdirectory within it" mode. Once that check passes, the script `rsync`s
+the **entire** `PROJECT_PATH` (minus `.git`/`vendor`/`composer.lock`) into a
+temp copy, runs `composer install --no-dev` there against that path's own
+`composer.json`, then runs phpcs/phpstan against **the whole copied tree**
+— still no further subdirectory scoping inside the tool itself. So pointing
+`--path` at the project root doesn't lint just one module either; it lints
+the entire project.
+
+For an in-project `app/code/Vendor/Module` with no `composer.json` of its
+own, the real options — pick based on what's actually needed:
+
+- **Module-scoped, using the project's own installed tools (usual case for
+  a PR/MR review)**: run the bare binaries directly, from the project root,
+  with the module's path as the *target argument* — see "Scoping" below
+  (`vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module`,
+  `vendor/bin/phpstan analyse app/code/Vendor/Module -c phpstan.neon`).
+  This isn't magelint's per-PHP-version isolation, but it uses the exact
+  tool versions this project's own `composer.lock` already pins — often
+  closer to what real CI enforces than a wrapper that fetches
+  `magento/magento-coding-standard:*` unpinned. Never `cd` into the module
+  directory first and expect either tool to find the project's own
+  `vendor/autoload.php` from there.
+- **Full per-PHP-version CI parity, whole project**: run `magelint` (or
+  equivalent) with no `--path` (or `--path=.` at the project root) — expect
+  it to be slow (full `composer install` plus a full-tree phpcs/phpstan
+  run) and to surface every pre-existing repo-wide finding mixed in with
+  whatever the new module introduces, not scoped to a diff. Only worth it
+  for a genuine full-project audit, not a quick per-module check.
+- **Real per-module CI isolation** (rare, only worth the effort if the
+  module is a candidate to become its own package): hand-author a minimal
+  synthetic `composer.json` for the module declaring `require` on just the
+  Magento interfaces/packages it actually references, and use it exactly
+  like the "Standalone Composer Packages Need Isolated Verification"
+  section above.
 
 ## Capabilities
 

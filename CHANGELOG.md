@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.9] - 2026-08-13
+
+### Fixed
+- `magento2-linter`: retracted the previous release's `magelint --path=`
+  guidance for in-project `app/code/Vendor/Module` targets — it shipped
+  without actually being run, and is wrong. Verified by reading the real
+  `magelint` script: `--path` still requires `composer.json` to exist
+  *directly at* that path (no "mount the project root, scope the lint
+  target to a subdirectory" mode exists), and once resolved, the whole
+  `PROJECT_PATH` gets rsync'd and linted as one unit — there's no
+  further subdirectory scoping inside the tool. "In-Project `app/code/`
+  Modules" in `magento2-linter/SKILL.md` now documents the actual options
+  (bare `phpcs`/`phpstan` scoped to the module using the project's own
+  installed tools; a full-project unscoped `magelint` run; or a hand-built
+  synthetic `composer.json` for real per-module isolation) instead.
+
 ## [0.4.8] - 2026-08-13
 
 ### Added
