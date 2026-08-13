@@ -610,7 +610,7 @@ bin/magento cache:clean layout block_html full_page
 
 # Static content deploy
 bin/magento setup:static-content:deploy -f
-
+```
 ### CSP Console Check
 
 **Chrome DevTools MCP (preferred, if available):** navigate to the page,
@@ -623,7 +623,6 @@ interaction needed; test with CSP headers enabled the same way.
 the DevTools console for CSP errors, and confirm again with CSP headers
 enabled.
 
-```
 
 ## Pitfalls recap
 
