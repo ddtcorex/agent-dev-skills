@@ -22,6 +22,8 @@ This skill performs a comprehensive audit of Magento 2 performance, infrastructu
 
 > **This is a checklist, not a menu.** All 9 steps under **Workflow** (bottom of this file) run on every invocation — infra, indexer/cron, per-page-type capture, Slow Query Analysis, Cache Invalidation Efficiency, Client-Side AJAX Load, Core Web Vitals, code-level grep, report. Picking the steps that feel highest-signal for the effort and quietly dropping the rest (no admin creds, no Chrome DevTools MCP, "I already found a good bug") is the single most common failure mode of this skill — it produces a confident, well-formatted report that silently covers less than half the checklist. If a step genuinely can't run, say so *in the report, under that step's own heading* — `Skipped: <reason>` — never by omission. See the self-verification gate at the end of Workflow: the report is not done until it's been checked against the Audit Report Template line by line.
 
+> **Distinguish a scoped ask from an unscoped one — this rule governs dropping steps quietly, not answering a narrower question.** A general ask — "audit performance", "review this project before launch" — is unscoped: all 9 steps apply, none optional, exactly as above. When the user's own words name one specific category instead ("just check the MySQL query count", "audit N+1s only", "how many queries does the homepage run"), scope the work to that category and its reference file(s) — running the other 8 steps anyway would be answering a different question than the one asked. The obligation that carries over unchanged: state the scope explicitly (a "Scope" line/heading in the report) so the result is never mistaken for a full audit, and don't let scope creep run in either direction — no silently expanding a scoped ask back to all 9 steps, and no silently narrowing an unscoped one down to whichever step already found something.
+
 ### Common ways this gets shortcut (don't)
 
 | Rationalization | Reality |
@@ -32,6 +34,7 @@ This skill performs a comprehensive audit of Magento 2 performance, infrastructu
 | "This step needs admin credentials / a Chrome DevTools MCP I don't have" | Mark that section **unverified** with the reason, in the report — don't drop it from the conversation as if it were never in scope |
 | "The draft report already has good findings, ship it" | Diff the draft against every checkbox in the Audit Report Template *before* presenting it as done — an unchecked box with no skip reason means the audit isn't finished, not that it's fine to omit |
 | "This query shape (or profiler timer) repeats/is slow but I don't think it's a real bug" | Not your call to make silently — list it in the Repeated Query Shapes or Slowest Blocks/Templates table (`references/report-template.md`) with your assessment anyway. A borderline case left out of the report is indistinguishable from one that was never checked |
+| "The user only asked about query counts, so I only ran that" | Correct *if* their own words named that one category — say so under a Scope heading. If their ask was general ("audit performance", "review this project"), this is the same shortcut as the rows above, just dressed up as scoping |
 
 ## Related Skills
 

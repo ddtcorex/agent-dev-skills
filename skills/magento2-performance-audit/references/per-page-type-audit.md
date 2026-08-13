@@ -16,6 +16,17 @@ Before measuring anything, verify the specific URLs you're about to test aren't 
 govard db query "SELECT category_id, COUNT(*) cnt FROM catalog_category_product GROUP BY category_id ORDER BY cnt LIMIT 200"
 # then pick 3 across that range, e.g. one ~10, one ~50-100, one ~200+
 
+# Category: a candidate's product-count row says nothing about whether it's actually enabled —
+# an inactive category still has real catalog_category_product rows and a resolvable
+# url_rewrite, so it looks like a perfectly good pick right up until the curl to it 404s.
+# Check is_active for every candidate before treating a 404 as "picked the wrong URL":
+govard db query "SELECT cce.entity_id, cv.value AS is_active FROM catalog_category_entity cce
+  LEFT JOIN catalog_category_entity_int cv ON cv.entity_id=cce.entity_id
+    AND cv.attribute_id=(SELECT attribute_id FROM eav_attribute WHERE attribute_code='is_active'
+      AND entity_type_id=(SELECT entity_type_id FROM eav_entity_type WHERE entity_type_code='catalog_category'))
+    AND cv.store_id=0
+  WHERE cce.entity_id IN (<candidate ids>)"
+
 # Product: confirm each candidate is assigned to a website (unassigned products 404 / aren't routable)
 govard db query "SELECT * FROM catalog_product_website WHERE product_id=<id>"
 
@@ -25,7 +36,7 @@ govard db query "SELECT * FROM catalog_product_website WHERE product_id=<id>"
 curl -sk -o /dev/null -w "%{http_code} -> %{redirect_url}\n" https://store.test/<product-url>.html
 ```
 
-Pick 3 categories spanning small/medium/large product counts (not the single largest root category, not an edge case), and 3 products that each resolve 200 directly — varying product type (simple/configurable) if the catalog has both.
+Pick 3 categories spanning small/medium/large product counts (not the single largest root category, not an edge case, confirmed `is_active`), and 3 products that each resolve 200 directly — varying product type (simple/configurable) if the catalog has both.
 
 ## 1. Set up the uncached measurement environment
 

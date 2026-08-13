@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.11] - 2026-08-13
+
+### Added
+- `magento2-performance-audit`: a fourth capture-integrity habit in
+  `database-query-profiling.md`, alongside the existing HTTP-status/UA/base_url
+  warnings — don't trust a query-count reading that looks like an outlier,
+  especially the first page captured right after `cache:flush`/the warmup
+  request. A real audit saw the homepage read 875 queries on the first pass
+  (four shapes — `store.*`/`store_group.*`/`store_website.*`/`SET NAMES` —
+  each repeating ~210 times), which never reproduced across 4 independent
+  re-captures; the likely cause was the *previous* request's shutdown-time log
+  write landing after the log was truncated for the next capture. The
+  project-baseline paragraph in the same file now points back at this check
+  before a number is recorded as a baseline.
+- `magento2-performance-audit`: `per-page-type-audit.md` step 0 now checks
+  category `is_active` alongside the existing product redirect/website-assignment
+  checks — a disabled category still has real `catalog_category_product` rows
+  and a resolvable `url_rewrite`, so it looks like a valid small/medium/large
+  sample right up until the request 404s.
+- `magento2-performance-audit`: `SKILL.md` now distinguishes a scoped ask (the
+  user's own words name one specific audit category, e.g. "just check the
+  MySQL query count") from an unscoped one ("audit performance", "review this
+  project") — the former runs only that category and states the reduced scope
+  explicitly in the report; the latter still requires all 9 Workflow steps,
+  unchanged. Added as a row in the shortcut-rationalization table to keep
+  legitimate scoping distinct from silently dropping steps.
+
 ## [0.4.10] - 2026-08-13
 
 ### Added
