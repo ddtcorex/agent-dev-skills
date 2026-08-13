@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.13] - 2026-08-13
+
+### Added
+- `magento2-performance-audit`: `references/database-query-profiling.md` documents a
+  core-Magento pattern where `catalog_product_super_link` lookups
+  (`Configurable::getParentIdsByChild()`) repeat 48–316×/page on a catalog with zero
+  configurable products. Tracing call stacks (not just the query shape) showed the waste
+  actually comes from **two unrelated core plugins converging on the same resource-model
+  method** — `Magento\Weee\Plugin\Model\ConfigurableVariationAttributePriority` (89% of
+  calls, gated by `tax/weee/enable`, unrelated to configurable products at all) and
+  `Magento\ConfigurableProduct\Model\Plugin\ProductIdentitiesExtender` (11%, always
+  active). Confirmed empirically that toggling `tax/weee/enable` on vanilla Luma sample
+  data reproduces the same waste (0 → 1 wasted call/product), proving it's core behavior,
+  not project-specific. Documents the frame-#4 grep to get the full caller distribution
+  before attributing a fix to just the first plugin traced, and the project-level
+  `aroundGetParentIdsByChild()` fix (request-memoized "has configurable products" check,
+  patched at the resource-model boundary so it covers every current and future caller).
+- `magento2-dev-core`: `references/architecture-patterns.md` documents a plugin-ordering
+  hazard under Plugins (Interceptors) — a batch-prefetch plugin that forces early
+  collection load (`afterCreateCollection` calling `getItems()`) shipped safely on a
+  project-owned leaf class (grep confirmed no other plugin on it), but registering the
+  same kind of plugin on the shared core `Magento\CatalogWidget\Block\Product\ProductsList`
+  to cover other widgets too meant two real vendor plugins already there
+  (`Magento\PageBuilder\...\ProductsListPlugin` sortOrder=1, `Smile\ElasticsuiteVirtualCategory\...\ProductsListPlugin`
+  sortOrder=100) would have had their stock/category/virtual-category filters silently
+  dropped sitewide without an explicit higher `sortOrder`. Documents the grep to run
+  before registering any side-effecting plugin on a class not owned by the project, and
+  the rule of thumb for setting `sortOrder` once other plugins are found.
+
 ## [0.4.12] - 2026-08-13
 
 ### Added

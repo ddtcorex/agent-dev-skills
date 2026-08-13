@@ -137,6 +137,28 @@ public function aroundExecute(
 }
 ```
 
+### Plugin Ordering: Audit Before Adding a Side-Effecting Plugin to a Shared Class
+
+The examples above only *decorate* their own return value - safe regardless of what other plugins exist on the same class, since each `after` plugin just receives the previous one's output. A plugin stops being that simple the moment it has a side effect beyond its own return value - most commonly, forcing early execution of something the caller expected to stay lazy (e.g. calling `getItems()` inside an `afterCreateCollection`/`afterGetLoadedProductCollection` plugin to read IDs for a cache-warming pass, before the collection would otherwise have loaded). Registering *that* kind of plugin on a class you don't own requires checking what else is already on it first - not assuming it composes safely just because your own code looks correct in isolation.
+
+**Concrete case that would have shipped a real bug without this check.** A batch-prefetch plugin forced a product collection to load early so it could warm a cache with product IDs before per-item rendering started. On a project-owned leaf class, a grep for other plugins on that exact class came back empty - safe. Registering the same *kind* of plugin on the shared core `Magento\CatalogWidget\Block\Product\ProductsList::createCollection()` (deliberately, to cover every widget built on it rather than one subclass) was a different situation: two other real vendor plugins on that exact class+method genuinely mutate the collection's filters *after* `createCollection()` returns - `Magento\PageBuilder\...\ProductsListPlugin` (`sortOrder="1"`, adds a stock filter, a category filter, and sorting) and `Smile\ElasticsuiteVirtualCategory\...\ProductsListPlugin` (`sortOrder="100"`, adds virtual-category sort/condition filters). Without an explicit `sortOrder` higher than both, the new plugin's implicit default (`0`) would have put it first in the `after` chain - forcing the query to run *before* either of those two plugins added their filters, silently dropping stock filtering, category filtering, sorting, and virtual-category rules for every Page Builder / virtual-category widget built on that core block, sitewide.
+
+**Before registering any plugin with a side effect beyond decorating its own return value, on a class you don't own:**
+
+```bash
+# Find every plugin already on the exact class (not just the exact method you're targeting)
+grep -rln 'Vendor\\Module\\Block\\TargetClass"' app/code vendor --include="di.xml"
+# For each hit: does its plugin body call a filtering/mutating API (addFieldToFilter,
+# addCategoryFilter, setOrder, distinct, etc.) in an after/around on the SAME method?
+# If yes, note its sortOrder - that's what you're ordering against.
+```
+
+Set `sortOrder` explicitly rather than relying on the implicit default (`0`, which usually means "runs first" among plugins that don't specify one):
+- If the new plugin only *reads* the final state (prefetch/cache-warm/log), set a `sortOrder` higher than every other plugin found on that method, so it always runs last - after every other plugin's mutation has already applied.
+- If it genuinely needs to run *before* others (rare outside `before` plugins doing input validation), say why in a comment - the failure mode otherwise stays invisible until a specific combination of other installed extensions is active, which is exactly the kind of bug that survives code review and manual testing on a bare-bones environment.
+
+A target class with zero other plugins (confirmed by the same grep) needs no `sortOrder` at all. The risk is specific to shared/core classes that third-party extensions commonly hook - assume one has other plugins until grep proves otherwise, not the reverse.
+
 ## Observers vs Plugins
 
 | Aspect | Observer | Plugin |
