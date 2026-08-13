@@ -11,6 +11,25 @@ OpenCode, Codex CLI, and GitHub Copilot all understand — see
 [Installation](#-installation) for how to wire this repo's `skills/` folder into
 each one, since they don't all scan the same directory name.
 
+> **Works best with [Govard](https://github.com/ddtcorex/govard).** Most
+> command examples in this hub assume a Govard-managed dev environment
+> (`govard sh -c "..."`, `govard tool magerun ...`) — without it, you'll
+> need to adapt them to your own container/CLI setup. One-line install:
+> `curl -fsSL https://raw.githubusercontent.com/ddtcorex/govard/master/install.sh | bash`.
+>
+> **Other soft dependencies**, only needed for the specific skill that uses
+> them:
+> - `n98-magerun2` — via `govard tool magerun`/`mr` (bundled with Govard)
+> - Composer dev packages `magento2-linter` installs on demand:
+>   `magento/magento-coding-standard`, `bitexpert/phpstan-magento`, `phpmd/phpmd`
+> - `magento/security-package` (optional, `magento2-security-scan`)
+> - Node.js/npm — Tailwind builds (`magento2-hyva-dev`), Lighthouse CI (`magento2-performance-audit`)
+> - Playwright — `magento2-hyva-dev`'s testing section
+> - Chrome DevTools MCP / GitHub MCP — optional, preferred paths in
+>   `magento2-performance-audit`, `magento2-hyva-dev`, and
+>   `magento2-code-review`; each has a fully-documented CLI/manual fallback
+>   (`gh`/`glab`, or a manual browser check) when the MCP isn't connected
+
 ---
 
 ## 📂 Directory Structure
