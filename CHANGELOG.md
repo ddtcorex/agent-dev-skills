@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.7] - 2026-08-13
+
+### Added
+- `govard-magento`: `govard tool magerun config:search` (cross-scope config
+  lookup) added to the Configuration section, and a new **Diagnostics**
+  section (`sys:check`, `sys:info`) — both additions alongside the
+  existing `bin/magento` commands, nothing replaced.
+- `magento2-hyva-dev`: the manual "test in browser, check console for CSP
+  errors" Verification step is now a **CSP Console Check** subsection —
+  Chrome DevTools MCP's `list_console_messages` preferred when connected,
+  the manual browser check kept as a complete, documented fallback.
+- `magento2-code-review`: GitHub MCP (`pull_request_read`,
+  `pull_request_review_write`, `add_comment_to_pending_review`) added as
+  the preferred remote-fetch mechanism for GitHub PRs — including posting
+  findings back as inline PR comments instead of only printing a report.
+  `gh pr diff`/`glab mr diff` remain the complete fallback for GitHub
+  without MCP and for GitLab targets.
+- `README.md`: a prominent note (right after the intro paragraph) that
+  this skillset works best paired with
+  [Govard](https://github.com/ddtcorex/govard), with its one-line install
+  command, plus a list of the other soft dependencies individual skills
+  assume (n98-magerun2, PHPCS/PHPStan/PHPMD Composer packages, Node/npm,
+  Playwright, Chrome DevTools MCP, GitHub MCP).
+
 ## [0.4.6] - 2026-08-12
 
 ### Added
