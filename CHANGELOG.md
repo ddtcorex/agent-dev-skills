@@ -4,6 +4,40 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.6] - 2026-08-12
+
+### Added
+- New skill `magento2-code-review`: orchestrates a PR/MR, module, theme, or
+  full-project review across the existing QA trio (`magento2-linter`,
+  `magento2-security-scan`, `magento2-performance-audit`) and
+  `magento2-dev-core`, at one of four scopes (full path, explicit file list,
+  local `git diff`, or remote `glab mr diff`/`gh pr diff` fetch — the last
+  one explicitly limited to text-pattern checks, since PHPStan/PHPMD need a
+  real checkout). Adds a plugin/observer conflict check
+  (`references/plugin-observer-conflict-check.md`) and theme-scope routing
+  for Hyvä and Luma (`references/theme-audit-checks.md`), including three
+  checks that existed nowhere before: Tailwind bundle-size regression,
+  Alpine hydration-root count, and RequireJS/LESS output-size regression.
+- `magento2-dev-core`: new shared `references/severity-and-codes.md` — a
+  Critical/High/Medium/Low severity scale and stable `M2-<PREFIX>-xxx`
+  finding-code catalogue used by the whole QA quartet (`magento2-linter`,
+  `magento2-security-scan`, `magento2-performance-audit`,
+  `magento2-code-review`). Replaces the skill's previous inline
+  "Anti-Pattern Severity" table.
+- `magento2-linter`: new PHPMD capability (cyclomatic complexity, unused
+  code, code smells — a signal neither PHPCS nor PHPStan catches) and a
+  "Scoping" section accepting an explicit file list instead of only a
+  directory path.
+- `magento2-security-scan`: new "Scoping" section accepting an explicit file
+  list instead of only a directory path.
+
+### Fixed
+- `magento2-linter`'s new Security Pattern Detection code column cites the
+  same shared `M2-ARCH-001` code as `magento2-dev-core`'s anti-pattern
+  table for `ObjectManager::getInstance` (Critical) — an early draft of
+  the shared taxonomy briefly minted a second code for this pattern before
+  this branch shipped; corrected before release.
+
 ## [0.4.5] - 2026-08-12
 
 ### Added

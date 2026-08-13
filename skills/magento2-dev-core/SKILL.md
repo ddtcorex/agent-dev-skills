@@ -19,7 +19,7 @@ This skill provides the foundational patterns all Magento 2 developers must foll
 
 ## Related Skills
 
-This is the foundation the other Magento 2 skills build on: `magento2-frontend-dev` and `magento2-hyva-dev` cover the two mutually exclusive theme stacks (check the theme's `theme.xml` parent to see which one the project actually uses — Luma vs Hyvä), `magento2-backend-dev` covers APIs/CLI/cron, and `magento2-linter`, `magento2-security-scan`, `magento2-performance-audit` verify the patterns below. In a Govard environment, pair this with `govard-magento` for the container/CLI side.
+This is the foundation the other Magento 2 skills build on: `magento2-frontend-dev` and `magento2-hyva-dev` cover the two mutually exclusive theme stacks (check the theme's `theme.xml` parent to see which one the project actually uses — Luma vs Hyvä), `magento2-backend-dev` covers APIs/CLI/cron, and `magento2-linter`, `magento2-security-scan`, `magento2-performance-audit` verify the patterns below — `magento2-code-review` orchestrates all three (plus this skill's own anti-pattern checks) into one report scoped to a PR/module/theme/project. In a Govard environment, pair this with `govard-magento` for the container/CLI side.
 
 ## Core Architectural Standards
 
@@ -109,7 +109,7 @@ public function beforeExecute(
 // Instead of around plugins that wrap the entire method
 ```
 
-Plugins only intercept **public** methods, must be stateless, and should not target a module's own classes or data objects. Register them in `di.xml` with an explicit `sortOrder` when order matters. Observer order is *not* guaranteed by contrast — if the sequence matters, use a plugin instead of an observer.
+Plugins only intercept **public** methods, must be stateless, and should not target a module's own classes or data objects. Register them in `di.xml` with an explicit `sortOrder` when order matters. Observer order is *not* guaranteed by contrast — if the sequence matters, use a plugin instead of an observer. Before adding a new plugin or observer, check for existing ones on the same target class/event — `magento2-code-review`'s plugin/observer conflict check (`references/plugin-observer-conflict-check.md` in that skill) covers the grep procedure.
 
 ### Declarative Schema
 
@@ -305,14 +305,12 @@ Quick lookup for what each `etc/` XML file controls:
 
 ## Anti-Pattern Severity (for code review)
 
-| Anti-pattern | Severity | Why |
-|---|---|---|
-| `ObjectManager::getInstance()` outside factories/proxies/bootstrap | Critical | Breaks testability, hides dependencies, escapes DI interception |
-| `<preference>` on a core class | High | Replaces the class entirely, blocks other extensions, upgrade-fragile |
-| Plugin on `Sales\Model\Order`, `Quote`, `Checkout`, `Payment`, `Customer\Model\Session` | High | High-traffic core classes — re-verify after every Magento upgrade |
-| Raw SQL outside a ResourceModel | Medium | Bypasses events, plugins, indexers, caching |
-| Copy-pasted theme template override | Medium | Silently breaks when Magento changes the original on upgrade — prefer layout XML/view models |
-| Extending `Action`, `AbstractModel`, `Template` base classes | Low | Prefer result interfaces, repositories, view models |
+Full severity scale and stable finding codes (shared with `magento2-linter`,
+`magento2-security-scan`, `magento2-performance-audit`, and
+`magento2-code-review`): `references/severity-and-codes.md`. The
+architecture anti-patterns this skill defines are catalogued there under the
+`M2-ARCH-xxx` namespace — map a new finding to an existing code before
+minting a new one.
 
 ## Testing Conventions
 
@@ -326,3 +324,4 @@ For detailed patterns, see:
 - `references/coding-standards.md` - Extended PHPCS/PHPStan guide
 - `references/architecture-patterns.md` - Service contracts, repositories, plugins
 - `references/security-best-practices.md` - Security checklist and patterns
+- `references/severity-and-codes.md` - Shared severity scale and finding codes (used by the whole QA quartet)

@@ -27,12 +27,14 @@ Part of the QA trio with `magento2-linter` (style/static analysis) and `magento2
 
 ### 1. Injection Vulnerabilities
 
-| Type | Pattern | Severity |
-|------|---------|----------|
-| SQL Injection | Direct SQL with user input | Critical |
-| XSS (Reflected) | Unescaped user input in output | High |
-| XSS (Stored) | Unescaped database content | Critical |
-| Command Injection | System command execution with user input | Critical |
+| Type | Pattern | Severity | Code |
+|------|---------|----------|------|
+| SQL Injection | Direct SQL with user input | Critical | M2-SEC-001 |
+| XSS (Reflected) | Unescaped user input in output | High | M2-SEC-003 |
+| XSS (Stored) | Unescaped database content | Critical | M2-SEC-002 |
+| Command Injection | System command execution with user input | Critical | M2-SEC-004 |
+
+Full scale and code catalogue: `magento2-dev-core/references/severity-and-codes.md`.
 
 ### 2. Authentication & Authorization
 
@@ -92,6 +94,22 @@ find var/ pub/static pub/media -type f -not -perm 0644 -ls
 find var/ pub/static pub/media -type d -not -perm 0755 -ls
 find app/etc -type f -not -perm 0640 -ls
 ```
+
+## Scoping
+
+The "Quick Security Scan" greps default to a full module path
+(`app/code/Vendor/Module`). Given an explicit file list instead, loop over it
+the same way:
+
+```bash
+for f in app/code/Vendor/Module/Controller/Index/Index.php app/code/Vendor/Module/Model/Foo.php; do
+  grep -Hn "\$_GET\|\$_POST\|\$_REQUEST\|ObjectManager::getInstance\|eval(" "$f"
+done
+```
+
+`magento2-code-review` derives this file list from a git diff or an MR fetch
+and calls this skill with it directly — the git/glab mechanics themselves
+live there, not here.
 
 ## XSS Prevention Checklist
 

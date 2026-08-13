@@ -3,8 +3,9 @@ name: magento2-linter
 description: |
   This skill should be used when the user asks to "check coding standards", "run phpcs", "lint
   my code", "run PHPStan analysis", "run static analysis on this module", "find security
-  issues in code", "audit custom code", or "verify code quality before commit". Runs automated
-  code quality checks for Magento 2 projects — PHPCS (Magento2 standard) and PHPStan.
+  issues in code", "check code complexity", "find code smells", "detect unused code", "audit
+  custom code", or "verify code quality before commit". Runs automated code quality checks for
+  Magento 2 projects — PHPCS (Magento2 standard), PHPStan, and PHPMD.
   DEPENDENT on magento2-dev-core for understanding the coding standards it validates.
 compatibility: claude, codex, opencode, copilot
 depends: [magento2-dev-core]
@@ -166,14 +167,58 @@ Scans for common anti-patterns that PHPCS might miss.
 
 **Detected patterns:**
 
-| Pattern | Issue | Risk |
-|---------|-------|------|
-| `SELECT * FROM` | Direct SQL | High |
-| `ObjectManager::getInstance` | Service Locator | High |
-| `$_GET`, `$_POST`, `$_REQUEST` | Superglobal access | High |
-| `eval()` | Code execution | Critical |
-| `base64_decode` on user input | Obfuscation | High |
-| `file_get_contents($userInput)` | Path traversal | High |
+| Pattern | Issue | Risk | Code |
+|---------|-------|------|------|
+| `SELECT * FROM` | Direct SQL | Medium | M2-ARCH-004 |
+| `ObjectManager::getInstance` | Service Locator | Critical | M2-ARCH-001 |
+| `$_GET`, `$_POST`, `$_REQUEST` | Superglobal access | High | M2-SEC-006 |
+| `eval()` | Code execution | Critical | M2-SEC-007 |
+| `base64_decode` on user input | Obfuscation | High | M2-SEC-008 |
+| `file_get_contents($userInput)` | Path traversal | High | M2-SEC-009 |
+
+Full scale and code catalogue: `magento2-dev-core/references/severity-and-codes.md`.
+Two rows cite `M2-ARCH-xxx` codes rather than a `M2-SEC-xxx` one:
+`ObjectManager::getInstance` cites `M2-ARCH-001` — the same underlying
+pattern `magento2-dev-core` already catalogues, cited from here rather than
+duplicated under a second code. `SELECT * FROM` cites `M2-ARCH-004` ("Raw
+SQL outside a ResourceModel") rather than `M2-SEC-001` ("SQL Injection... with
+user input") — this bare-string grep can't confirm user input is actually
+involved, so it's the weaker raw-SQL-usage finding, not a confirmed
+injection; `magento2-security-scan`'s own SQL Injection checks (which do
+correlate with user input) are what earns `M2-SEC-001`.
+
+### 4. PHPMD (Code Smell & Complexity)
+
+Catches cyclomatic complexity, unused code, and code smells that PHPCS
+(style) and PHPStan (types) don't check for — a 200-line method or a
+15-parameter constructor passes both of those clean.
+
+**Prerequisite:**
+
+```bash
+composer require --dev phpmd/phpmd --no-interaction
+```
+
+**Run it:**
+
+```bash
+govard sh -c "vendor/bin/phpmd app/code/Vendor/Module text phpmd.xml"
+```
+
+**What it checks (default ruleset — tune via a project `phpmd.xml`):**
+
+| Check | Flags |
+|---|---|
+| Cyclomatic complexity | Methods with too many branches/paths |
+| NPath complexity | Combinatorial explosion of execution paths |
+| Excessive method/class length | Methods/classes past a line-count threshold |
+| Excessive parameter lists | Constructors/methods with too many parameters |
+| Unused code | Unused local variables, parameters, private methods/fields |
+| Naming | Short/non-descriptive variable names |
+
+No auto-fix — every PHPMD finding needs a manual refactor (usually: extract
+method, reduce constructor dependencies via a factory/proxy, or delete dead
+code).
 
 ## Usage
 
@@ -214,6 +259,29 @@ vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module --extensions=xml,xsl
 govard sh -c "vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module"
 govard sh -c "vendor/bin/phpstan analyse app/code/Vendor/Module -c phpstan.neon"
 ```
+
+## Scoping
+
+Accepts either a directory (the examples above) or an explicit space-separated
+file list — both PHPCS and PHPStan take file arguments natively:
+
+```bash
+vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module/Model/Foo.php app/code/Vendor/Module/Model/Bar.php
+vendor/bin/phpstan analyse app/code/Vendor/Module/Model/Foo.php app/code/Vendor/Module/Model/Bar.php -c phpstan.neon
+```
+
+The Security Pattern Detection greps need the same file list looped instead
+of a directory glob:
+
+```bash
+for f in app/code/Vendor/Module/Model/Foo.php app/code/Vendor/Module/Model/Bar.php; do
+  grep -Hn "ObjectManager::getInstance\|\$_GET\|\$_POST\|\$_REQUEST\|eval(" "$f"
+done
+```
+
+`magento2-code-review` derives this file list from a git diff or an MR fetch
+and calls this skill with it directly — the git/glab mechanics themselves
+live there, not here.
 
 ## Interpreting Results
 

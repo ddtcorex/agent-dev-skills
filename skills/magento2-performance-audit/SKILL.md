@@ -37,7 +37,7 @@ This skill performs a comprehensive audit of Magento 2 performance, infrastructu
 
 **REQUIRED BACKGROUND:** Load `magento2-dev-core` first — code-level fixes for N+1 queries and heavy constructors follow the patterns it defines.
 
-Part of the QA trio with `magento2-linter` and `magento2-security-scan`. Async/queue findings often point back to `magento2-backend-dev`.
+Part of the QA trio with `magento2-linter` and `magento2-security-scan` — together with `magento2-dev-core`, these form the "QA quartet" that `magento2-code-review` orchestrates at PR/module/theme/project scope. Findings use the shared `M2-PERF-xxx` codes cataloged in `magento2-dev-core/references/severity-and-codes.md`. Async/queue findings often point back to `magento2-backend-dev`.
 
 ## Audit Categories
 
