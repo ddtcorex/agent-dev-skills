@@ -48,7 +48,7 @@ skills expected to run before a release.
 | Full path | "review this module/project" | module/theme/`app/code` path, as today |
 | Explicit file list | caller already knows which files | passed straight through |
 | Local git diff | "review this PR", branch already checked out | `git diff` against a base ref |
-| Remote fetch | "review MR !123 before I check it out" | `glab mr diff` / `gh pr diff` — **text-pattern checks only**, see below |
+| Remote fetch | "review MR !123 before I check it out" | GitHub MCP (`pull_request_read`, preferred for GitHub) / `glab mr diff` / `gh pr diff` — **text-pattern checks only**, see below |
 
 Full mechanics, exact commands, and the remote-fetch limitation:
 `references/scope-modes.md`.
@@ -60,10 +60,18 @@ Full mechanics, exact commands, and the remote-fetch limitation:
 2. Resolve the scope to a file list per `references/scope-modes.md`.
 3. Run `magento2-linter` and `magento2-security-scan` against that file list
    (see each skill's own "Scoping" section for how they accept a list vs. a
-   path).
-4. If scope is project or module, also run `magento2-performance-audit`'s
-   applicable steps; if scope is theme, run the theme-scope routing in
-   `references/theme-audit-checks.md` instead of the full 9-step audit.
+   path). `magento2-security-scan`'s Authentication & Authorization, Data
+   Exposure, and CSP Configuration checks are environment-level, not
+   file-scoped — see its "Environment-level checks — scope boundary": they
+   run once per audit at project/module/theme scope (never per file) and
+   are skipped entirely at PR/MR scope (no live environment to query).
+4. Run the performance/theme checks applicable to scope — PR/MR scope is
+   **not** exempt, it always gets the static/file-scoped subset (never zero
+   performance/theme coverage); project/module scope additionally gets the
+   live/infra steps; theme scope runs the full routing in
+   `references/theme-audit-checks.md` instead of the 9-step audit. Full
+   split of which checks are static vs. live: `references/scope-modes.md`'s
+   "Performance/theme checks by scope".
 5. If the file list touches `di.xml`, `events.xml`, a `Plugin/` class, or an
    `Observer/` class, run the conflict check in
    `references/plugin-observer-conflict-check.md`.
@@ -100,6 +108,11 @@ Full mechanics, exact commands, and the remote-fetch limitation:
 ### Coverage note
 
 [If mode=remote fetch: state explicitly that PHPStan/PHPMD did not run —
-text-pattern checks only. If any trio member's step was skipped, say
-`Skipped: <reason>` here rather than omitting it.]
+text-pattern checks only. If scope is PR/MR, list which live/infra
+performance/theme steps from `references/scope-modes.md`'s "Performance/
+theme checks by scope" did not run and why, and confirm
+`magento2-security-scan`'s environment-level checks (Authentication &
+Authorization, Data Exposure, CSP Configuration) were skipped for the same
+reason. If any trio member's step was skipped, say `Skipped: <reason>` here
+rather than omitting it.]
 ```

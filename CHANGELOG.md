@@ -4,6 +4,60 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.7] - 2026-08-13
+
+### Added
+- `govard-magento`: `govard tool magerun config:store:get` (cross-scope config
+  lookup) added to the Configuration section, and a new **Diagnostics**
+  section (`sys:check`, `sys:info`) — both additions alongside the
+  existing `bin/magento` commands, nothing replaced.
+- `magento2-hyva-dev`: the manual "test in browser, check console for CSP
+  errors" Verification step is now a **CSP Console Check** subsection —
+  Chrome DevTools MCP's `list_console_messages` preferred when connected,
+  the manual browser check kept as a complete, documented fallback.
+- `magento2-code-review`: GitHub MCP (`pull_request_read`,
+  `pull_request_review_write`, `add_comment_to_pending_review`) added as
+  the preferred remote-fetch mechanism for GitHub PRs — including posting
+  findings back as inline PR comments instead of only printing a report.
+  `gh pr diff`/`glab mr diff` remain the complete fallback for GitHub
+  without MCP and for GitLab targets.
+- `README.md`: a prominent note (right after the intro paragraph) that
+  this skillset works best paired with
+  [Govard](https://github.com/ddtcorex/govard), with its one-line install
+  command, plus a list of the other soft dependencies individual skills
+  assume (n98-magerun2, PHPCS/PHPStan/PHPMD and magento/security-package
+  Composer packages, Node/npm, Playwright, Chrome DevTools MCP, GitHub MCP).
+- `magento2-dev-core`/`magento2-linter`: a new `M2-STYLE-xxx` code band in
+  `severity-and-codes.md` for PHPMD's own finding categories (complexity,
+  length, parameter count, unused code, naming) — previously PHPMD findings
+  had no code to map to, forcing `magento2-code-review` reports to leave
+  them unmapped.
+- `magento2-code-review`: PR/MR scope no longer skips performance/theme
+  checks entirely — a new "Performance/theme checks by scope" section in
+  `references/scope-modes.md` always runs the static, file-scoped subset
+  (code-level performance-pattern greps, Customer Data rule reads, CSP
+  nonce/pattern check, Alpine hydration-root count) at PR/MR scope, and
+  requires the Coverage note to name which live/infra checks (per-page
+  audit, Core Web Vitals trace, Tailwind/RequireJS bundle-size regression,
+  etc.) were skipped and why. Project/module/theme scope keep the full
+  live/infra checks as before.
+
+### Fixed
+- `magento2-linter`: "Interpreting Results" now warns that real PHPCS/
+  PHPStan/PHPMD output on PHP 8.4+ commonly includes PHP-8.4-compatibility
+  deprecation noise the clean example output doesn't show, and instructs
+  checking the actual exit code (`echo "EXITCODE:$?"`) instead of judging
+  success/failure by output shape alone.
+- `magento2-security-scan`: added a "scope boundary" note — Authentication
+  & Authorization, Data Exposure, and CSP Configuration are environment-
+  level checks (not file-scoped), run once per audit at project/module/
+  theme scope and skipped entirely at PR/MR scope; previously undocumented,
+  leaving this to be decided ad hoc per review.
+- `magento2-dev-core`: `M2-ARCH-004` ("Raw SQL outside a ResourceModel") now
+  explicitly excludes a deliberate, isolated batch-read query used to fix
+  an N+1 pattern (the same thing `M2-PERF-001` asks for) — previously the
+  taxonomy had no way to distinguish that from careless raw SQL.
+
 ## [0.4.6] - 2026-08-12
 
 ### Added

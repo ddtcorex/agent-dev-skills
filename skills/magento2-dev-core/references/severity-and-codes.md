@@ -27,6 +27,17 @@ not a rewording of an existing row.
 | M2-ARCH-006 | Extending `Action`, `AbstractModel`, `Template` base classes | Low | Prefer result interfaces, repositories, view models |
 | M2-ARCH-007 | Multiple `around` plugins (or unordered plugins) on the same method with no explicit `sortOrder` | High | Undefined interception order — see `magento2-code-review`'s plugin/observer conflict check |
 
+`M2-ARCH-004` is for raw SQL used carelessly in place of a Repository or
+Collection call that already does the job — not for a deliberate, isolated
+batch-read query (e.g. `ResourceConnection` used on purpose to replace what
+would otherwise be an N+1 loop of Repository calls with one
+`WHERE id IN (?)` query). That pattern is the *fix* `M2-PERF-001` asks for,
+not a violation of this code; the same "use judgment, not every instance of
+the pattern is bad" discretion `plugin-observer-conflict-check.md` applies
+to plugin ordering applies here too. Ask "does this replace a batch read
+Repository/Collection can't express efficiently, or one that already can?"
+— only the latter earns `M2-ARCH-004`.
+
 ## `M2-SEC-xxx` — security findings (`magento2-security-scan`, and `magento2-linter`'s custom pattern greps)
 
 | Code | Finding | Severity |
@@ -77,3 +88,19 @@ an existing code first" rule above exists specifically to prevent.
 CSP and Core Web Vitals findings found *during a theme-scope review* still use
 `M2-SEC-010` and `M2-PERF-006` respectively — `M2-THEME-xxx` is reserved for
 checks that have no equivalent anywhere else in this list.
+
+## `M2-STYLE-xxx` — code smell / complexity findings (`magento2-linter`'s PHPMD capability)
+
+| Code | Finding | Severity |
+|---|---|---|
+| M2-STYLE-001 | Excessive cyclomatic/NPath complexity | Low |
+| M2-STYLE-002 | Excessive method/class length | Low |
+| M2-STYLE-003 | Excessive parameter list | Low |
+| M2-STYLE-004 | Unused code (local variable, parameter, private method/field) | Low |
+| M2-STYLE-005 | Non-descriptive naming | Low |
+
+All Low by default — code smell, not a confirmed functional or security
+risk. If the same code also independently earns an `M2-ARCH-xxx` finding
+(e.g. an excessive-parameter constructor whose real problem is a missing
+factory/proxy), file both codes rather than raising `M2-STYLE-xxx`'s own
+severity to match.
