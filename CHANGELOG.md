@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.14] - 2026-08-13
+
+### Changed
+- `magento2-performance-audit`, `magento2-dev-core`: tightened the two lessons added in
+  0.4.13. Both ran 3-4x longer than this hub's own established "on one real audit" callout
+  length (measured: 771 and 551 words vs. the ~170-220 word house style elsewhere in the
+  same files) — cut the repeated restatements, kept the mechanism, table, grep, and fix
+  code. The `magento2-dev-core` entry also named two specific third-party vendor extension
+  classes (`Magento\PageBuilder\...`, `Smile\ElasticsuiteVirtualCategory\...`) as if any
+  reader should expect to find exactly those two on their own project — genericized to the
+  behavior pattern (a stock/category filter plugin, a search-condition filter plugin) since
+  the lesson is "audit whatever plugins your project actually has," not "expect these two."
+  Confirmed via `grep` across every skill's markdown that no other vendor-specific FQCN or
+  project name leaked in elsewhere in the hub.
+
 ## [0.4.13] - 2026-08-13
 
 ### Added

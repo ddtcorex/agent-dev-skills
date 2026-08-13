@@ -71,7 +71,7 @@ govard sh -c "bin/magento dev:query-log:disable"
 
 ## Known Core-Magento Pattern: Configurable-Parent Lookup Gated by an Unrelated Config Flag
 
-On one real audit (a store with ~14,400 products, zero `configurable`-type products in the catalog — 100% `simple`/`bundle`), category and product pages showed this shape repeating 48–316 times per page load, every single call returning `AFF: 0`:
+On one real audit (zero `configurable`-type products in the catalog), this shape repeated 48–316×/page, every call returning `AFF: 0`:
 
 ```
 SELECT e.entity_id FROM catalog_product_super_link AS l
@@ -79,33 +79,30 @@ SELECT e.entity_id FROM catalog_product_super_link AS l
   WHERE (l.product_id IN(?))
 ```
 
-> **Assumes no DB table prefix.** Like everywhere else in this audit, the table names above (`catalog_product_super_link`, `catalog_product_entity`) are the bare names — if this project has a `db.table_prefix` set (check per `references/per-page-type-audit.md`'s callout: `govard sh -c "grep -A1 \"'table_prefix'\" app/etc/env.php"`), the *actual* text logged in `var/debug/db.log` will show the prefixed names instead, and the grep below needs the same prefix prepended or it will silently return 0 matches — which reads as "this pattern doesn't apply here" when it may just mean the grep pattern didn't match. The PHP fix itself is unaffected: `$resourceConnection->getTableName('catalog_product_entity')` already resolves the prefix, so nothing changes there.
+> **Assumes no DB table prefix** — see the callout in `references/per-page-type-audit.md`. If set, the grep below needs the same prefix or it silently returns 0 matches, reading as "doesn't apply here."
 
-The obvious-looking explanation — "catalog has no configurable products, so this always returns empty, so it's pure waste" — is correct, but tracing the actual PHP call stacks (not just reading the query shape or trusting the first plugin name you find in `vendor/`) revealed the waste comes from **two independent, unrelated core plugins converging on the same resource-model method**, not one:
+"Catalog has no configurable products, so it's pure waste" is correct but incomplete — tracing call stacks showed **two unrelated core plugins converge on the same resource-model method**:
 
-| Caller | Share of calls (this audit) | Trigger condition |
+| Caller | Share | Trigger |
 |---|---|---|
-| `Magento\Weee\Plugin\Model\ConfigurableVariationAttributePriority::afterGetProductWeeeAttributes()` | 89% | `tax/weee/enable = 1` (Fixed Product Tax / eco-tax) at the relevant store scope — **unrelated to configurable products entirely** |
-| `Magento\ConfigurableProduct\Model\Plugin\ProductIdentitiesExtender::afterGetIdentities()` | 11% | Always active — runs on every `Product::getIdentities()` call (FPC cache-tag collection) |
+| `Magento\Weee\Plugin\Model\ConfigurableVariationAttributePriority` | 89% | `tax/weee/enable=1` — unrelated to configurable products at all |
+| `Magento\ConfigurableProduct\Model\Plugin\ProductIdentitiesExtender` | 11% | Always active (FPC cache-tag collection) |
 
-Both ultimately call `Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable::getParentIdsByChild()`, which queries `catalog_product_super_link` unconditionally — there is no early-exit anywhere in this chain for "does this store even have configurable products."
-
-**Why this is easy to misdiagnose:** patching (or even just attributing the cause to) whichever plugin you traced *first* leaves the other caller's cost completely untouched — in this case, stopping at `ProductIdentitiesExtender` alone would have left 89% of the actual waste in place. **Get the full distribution of immediate callers before deciding where to fix, not one sample trace:**
+Both call `Configurable::getParentIdsByChild()` with no early-exit for "does this store have configurable products." **Get the full caller distribution before fixing** — stopping at the first plugin traced would have left 89% of the waste in place:
 
 ```bash
-# Requires --include-call-stack=true. Frame #4 is the direct caller of
-# Type\Configurable::getParentIdsByChild() — frames #0-3 are just the interceptor chain.
+# Requires --include-call-stack=true. Frame #4 is the direct caller.
 grep -A5 "FROM \`catalog_product_super_link\` AS \`l\`" var/debug/db.log \
   | grep -oE '#4 [^(]+\([0-9]+\): [A-Za-z0-9_\\]+->[A-Za-z0-9_]+' | sort | uniq -c | sort -rn
 ```
 
-**Why a project with real configurable products (e.g. vanilla Luma sample data) won't show this at all, even though the exact same core code runs there too:** confirmed empirically by toggling `tax/weee/enable` on a vanilla Luma install with `full_page`/`block_html`/`layout` caches disabled (methodology above). A 9-product category went from 163 total queries / 0 wasted `catalog_product_super_link` calls (FPT off, Luma's actual default — never shipped with FPT sample data) to 173 / 9 (FPT on) — 1 wasted call per product. The multiplier compounds further on a catalog dominated by **bundle** products specifically: each bundle price recalculation (regular/special/tier/min-max) re-triggers the Weee check independently, which is why the original audit saw ~6–7 calls per product where this Luma test saw a flat 1:1. **Check `bin/magento config:show tax/weee/enable` (every relevant store scope) as a standing step whenever this exact query shape shows up** — "catalog has no configurable products" fully explains the `ProductIdentitiesExtender` share, but not the rest, and a report that stops there under-counts the fix's impact.
+Confirmed this is core behavior, not project-specific, by toggling `tax/weee/enable` on vanilla Luma sample data with caches disabled: a 9-product category went 0 → 1 wasted call/product. Check `bin/magento config:show tax/weee/enable` as a standing step whenever this shape shows up — "no configurable products" alone under-counts the fix's impact.
 
-**Fix:** a project-level plugin (not a vendor patch — this is 100% `vendor/magento/` code, no version to upgrade to) on the convergence point, not on either individual caller:
+**Fix:** a project-level plugin at the resource-model boundary (not either individual caller — vendor code, no version to upgrade to):
 
 ```php
-// Plugin on Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable::getParentIdsByChild()
-public function aroundGetParentIdsByChild(ConfigurableResource $subject, callable $proceed, $childId)
+// Plugin on Configurable::getParentIdsByChild()
+public function aroundGetParentIdsByChild($subject, callable $proceed, $childId)
 {
     if (!$this->hasConfigurableProducts()) {   // request-memoized SELECT ... WHERE type_id='configurable' LIMIT 1
         return [];
@@ -114,7 +111,7 @@ public function aroundGetParentIdsByChild(ConfigurableResource $subject, callabl
 }
 ```
 
-Memoize the "does this store have any configurable products at all" check **per request only**, never in a persistent cache — this is what makes the fix self-healing and risk-free: the moment a configurable product is added anywhere in the catalog, the very next request re-checks and falls back to real core behavior automatically, with zero stale-cache/invalidation logic to maintain and zero functional change (the query would have returned empty either way for every product actually unrelated to the new configurable). The check has to live at the resource-model boundary rather than patching `ProductIdentitiesExtender` (or any other single caller) — that boundary is the only point every current *and future* caller doing the same "am I a configurable child" check is guaranteed to pass through.
+Memoize **per request only** — self-healing the moment a configurable product is added, with zero stale-cache logic to maintain.
 
 ## Slow Query Analysis
 
