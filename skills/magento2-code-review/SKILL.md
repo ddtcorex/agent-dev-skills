@@ -48,7 +48,7 @@ skills expected to run before a release.
 | Full path | "review this module/project" | module/theme/`app/code` path, as today |
 | Explicit file list | caller already knows which files | passed straight through |
 | Local git diff | "review this PR", branch already checked out | `git diff` against a base ref |
-| Remote fetch | "review MR !123 before I check it out" | `glab mr diff` / `gh pr diff` — **text-pattern checks only**, see below |
+| Remote fetch | "review MR !123 before I check it out" | GitHub MCP (`pull_request_read`, preferred for GitHub) / `glab mr diff` / `gh pr diff` — **text-pattern checks only**, see below |
 
 Full mechanics, exact commands, and the remote-fetch limitation:
 `references/scope-modes.md`.

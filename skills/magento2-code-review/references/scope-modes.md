@@ -31,10 +31,24 @@ git diff --name-only --diff-filter=ACMR <base>...<head> -- '*.php' '*.phtml' '*.
 
 ## Remote fetch (no checkout)
 
+**GitHub MCP (preferred, if connected and the target is a GitHub PR):** use
+`pull_request_read` to fetch the diff instead of shelling out to `gh pr
+diff`. If the user wants findings posted back to the PR rather than only
+printed as a markdown report, use `pull_request_review_write` to open a
+pending review and `add_comment_to_pending_review` to attach each finding
+as an inline comment, then submit the review.
+
+**CLI fallback (GitHub without MCP connected, or any GitLab target — no
+GitLab MCP is available):**
+
 ```bash
 glab mr diff <id>       # GitLab
 gh pr diff <number>      # GitHub
 ```
+
+Both paths produce the same diff text for the checks below — GitHub MCP is
+a preference, not a requirement; every capability in this section works
+end-to-end through the CLI fallback alone.
 
 **What this can and cannot run:**
 
