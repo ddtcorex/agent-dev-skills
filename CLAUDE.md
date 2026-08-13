@@ -44,7 +44,7 @@ both point at the *same* `skills/` directory so neither duplicates content:
   `.agents/plugins/marketplace.json` that self-lists this repo the same way
   (`"source": {"source": "local", "path": "./"}`). Verified end-to-end
   against the real `codex` binary: `codex plugin marketplace add .` then
-  `codex plugin add dev-skills-hub@dev-skills-hub` resolves all 10 skills
+  `codex plugin add dev-skills-hub@dev-skills-hub` resolves all 11 skills
   with zero copying.
 
 Both marketplaces' top-level `name` and the plugin's `name` are kept
@@ -58,7 +58,7 @@ its own) — nothing enforces they match automatically.
 
 ### One SKILL.md format, four incompatible project-level paths, two plugin loaders
 
-All 10 skills follow the [Agent Skills standard](https://agentskills.io) (a
+All 11 skills follow the [Agent Skills standard](https://agentskills.io) (a
 `SKILL.md` file with `name`/`description` YAML frontmatter) — a format Claude
 Code, OpenCode, Codex CLI, and GitHub Copilot all read identically. What
 differs is which directory name each tool scans in a *consuming project* for
@@ -155,7 +155,7 @@ export CODEX_HOME=$(mktemp -d)
 codex plugin marketplace add .
 codex plugin list --available --json   # confirm dev-skills-hub@dev-skills-hub is listed
 codex plugin add dev-skills-hub@dev-skills-hub
-codex plugin list --json               # confirm it installed and all 10 skills resolved
+codex plugin list --json               # confirm it installed and all 11 skills resolved
 unset CODEX_HOME                       # the temp dir is disposable -- nothing else to clean up
 
 # install.sh: syntax check and dry test in an isolated scratch dir (never
