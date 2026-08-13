@@ -36,7 +36,7 @@ dev-skills-hub/
     │   └── magento2-dev-core/           # Magento 2 core guidelines (DI, Repositories, Security)
     │
     ├── 🛠️ QUALITY ASSURANCE & AUDITING (Linting and static analysis)
-    │   ├── magento2-linter/             # PHPCS, PHPStan static checking rules
+    │   ├── magento2-linter/             # PHPCS, PHPStan, PHPMD code quality checks
     │   ├── magento2-performance-audit/  # Web vitals, infrastructure and DB profiling
     │   ├── magento2-security-scan/      # Static vulnerability code scanning
     │   └── magento2-code-review/        # PR/module/theme/project review orchestration

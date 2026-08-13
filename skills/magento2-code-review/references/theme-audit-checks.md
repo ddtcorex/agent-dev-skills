@@ -5,10 +5,10 @@ already cover, and defines only what doesn't exist anywhere else yet.
 
 ## 1. Detect Hyvä vs. Luma
 
-Reuse `magento2-hyva-dev`'s "Related Skills"
-section: check the theme's `theme.xml` parent (`Hyva/default`/`Hyva/reset`
-vs `Magento/blank`) and `composer.json` for `hyva-themes/*` packages. The two
-stacks are mutually exclusive.
+Reuse `magento2-hyva-dev`'s "Related Skills" section: check the theme's
+`theme.xml` parent (`Hyva/default`/`Hyva/reset` vs `Magento/blank`) and
+`composer.json` for `hyva-themes/*` packages. The two stacks are mutually
+exclusive.
 
 ## 2. Hyvä — cross-referenced checks (do not duplicate here)
 
@@ -51,10 +51,13 @@ render-delay-dominated LCP for that same page type.
 **RequireJS bundle size / unbundled-module count** (`M2-THEME-003`):
 
 ```bash
-govard sh -c "bin/magento dev:js:enable_js_bundling"
+govard sh -c "bin/magento config:set dev/js/enable_js_bundling 1"
 govard sh -c "bin/magento setup:static-content:deploy -f"
 find pub/static/frontend/*/*/*/js -name "*.js" | wc -l
-du -sh pub/static/frontend/*/*/*/requirejs-*.js 2>/dev/null
+du -sh pub/static/frontend/*/*/*/*/js/bundle/ 2>/dev/null
+# Restore afterward if bundling wasn't already enabled on this project:
+govard sh -c "bin/magento config:set dev/js/enable_js_bundling 0"
+govard sh -c "bin/magento setup:static-content:deploy -f"
 ```
 
 **LESS output size** (`M2-THEME-003`):

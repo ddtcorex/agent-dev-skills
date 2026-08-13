@@ -1,16 +1,15 @@
 ---
 name: magento2-code-review
 description: |
-  Orchestrates a PR/MR, module, theme, or full-project code review by
-  running the QA trio (magento2-linter, magento2-security-scan,
-  magento2-performance-audit) and magento2-dev-core's anti-pattern checks
-  at the right scope, then merges their findings into one report using a
-  shared severity scale and stable finding codes. Use when:
-  - "Review this PR/MR", "review this merge request"
-  - "Review this module", "audit this module before merge"
-  - "Review this theme", "audit this theme PR"
-  - "Full review before release"
-  DEPENDENT on magento2-dev-core; invokes magento2-linter,
+  This skill should be used when the user asks to "review this PR/MR",
+  "review this merge request", "review this module", "audit this module
+  before merge", "review this theme", "audit this theme PR", or wants a
+  "full review before release". Orchestrates a PR/MR, module, theme, or
+  full-project code review by running the QA trio (magento2-linter,
+  magento2-security-scan, magento2-performance-audit) and
+  magento2-dev-core's anti-pattern checks at the right scope, then merges
+  their findings into one report using a shared severity scale and stable
+  finding codes. DEPENDENT on magento2-dev-core; invokes magento2-linter,
   magento2-security-scan, and magento2-performance-audit as needed for the
   chosen scope.
 compatibility: claude, codex, opencode, copilot

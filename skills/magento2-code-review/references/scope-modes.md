@@ -12,7 +12,7 @@ Run inside the checked-out Govard project (the code needs to be on disk, in
 the container, for PHPCS/PHPStan/PHPMD/magerun to see it):
 
 ```bash
-git diff --name-only --diff-filter=ACMR <base>...<head> -- '*.php' '*.phtml' '*.xml'
+git diff --name-only --diff-filter=ACMR <base>...<head> -- '*.php' '*.phtml' '*.xml' '*.js' '*.less' '*.css' '*.graphqls'
 ```
 
 - `<base>` is typically `origin/master` (or the project's actual default

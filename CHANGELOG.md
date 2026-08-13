@@ -32,11 +32,11 @@ All notable changes to this project are documented here. The format follows
   list instead of only a directory path.
 
 ### Fixed
-- `magento2-linter`: the "Security Pattern Detection" table rated
-  `ObjectManager::getInstance` as High severity and its own code, while
-  `magento2-dev-core`'s own anti-pattern table already rated the same
-  pattern Critical under `M2-ARCH-001` — both now cite that single shared
-  code, resolved as Critical, instead of two codes for one pattern.
+- `magento2-linter`'s new Security Pattern Detection code column cites the
+  same shared `M2-ARCH-001` code as `magento2-dev-core`'s anti-pattern
+  table for `ObjectManager::getInstance` (Critical) — an early draft of
+  the shared taxonomy briefly minted a second code for this pattern before
+  this branch shipped; corrected before release.
 
 ## [0.4.5] - 2026-08-12
 
