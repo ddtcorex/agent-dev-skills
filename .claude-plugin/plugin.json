@@ -1,6 +1,6 @@
 {
   "name": "dev-skills-hub",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "An extensible hub of AI development skills -- currently Magento 2 (architecture, linting, performance, security) and Govard dev-environment orchestration, with more stacks over time",
   "author": {
     "name": "DDTCoreX",

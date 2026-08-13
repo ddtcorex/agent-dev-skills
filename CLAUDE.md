@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A dual-ecosystem plugin (`dev-skills-hub`) bundling 10 Magento 2 and Govard
+A dual-ecosystem plugin (`dev-skills-hub`) bundling 11 Magento 2 and Govard
 development skills, distributed via self-listing marketplaces for both Claude
 Code and Codex CLI. There is no build step, no test suite, and no application
 code — the repository *is* the plugin (in both ecosystems at once), and its
@@ -96,8 +96,8 @@ cross-tool-sharing convention along with `compatibility` and `metadata`):
 
 - `magento2-dev-core` is the foundation; `magento2-linter`,
   `magento2-performance-audit`, `magento2-security-scan`,
-  `magento2-hyva-dev`, `magento2-frontend-dev`, and `magento2-backend-dev` all
-  declare `depends: [magento2-dev-core]`.
+  `magento2-hyva-dev`, `magento2-frontend-dev`, `magento2-backend-dev`, and
+  `magento2-code-review` all declare `depends: [magento2-dev-core]`.
 - `govard-toolbox` is the foundation; `govard-magento` and `govard-laravel`
   both declare `depends: [govard-toolbox]`.
 

@@ -38,7 +38,8 @@ dev-skills-hub/
     ├── 🛠️ QUALITY ASSURANCE & AUDITING (Linting and static analysis)
     │   ├── magento2-linter/             # PHPCS, PHPStan static checking rules
     │   ├── magento2-performance-audit/  # Web vitals, infrastructure and DB profiling
-    │   └── magento2-security-scan/      # Static vulnerability code scanning
+    │   ├── magento2-security-scan/      # Static vulnerability code scanning
+    │   └── magento2-code-review/        # PR/module/theme/project review orchestration
     │
     ├── 🎨 FRONTEND & BACKEND FRAMEWORKS (Domain-specific code)
     │   ├── magento2-hyva-dev/           # Alpine.js, Tailwind CSS, CSP payment pages
@@ -112,6 +113,7 @@ still requires it to sit in the directory name that tool scans (see
 | [magento2-linter](skills/magento2-linter/SKILL.md) | ✅ | ✅ | ✅ | ✅ |
 | [magento2-performance-audit](skills/magento2-performance-audit/SKILL.md) | ✅ | ✅ | ✅ | ✅ |
 | [magento2-security-scan](skills/magento2-security-scan/SKILL.md) | ✅ | ✅ | ✅ | ✅ |
+| [magento2-code-review](skills/magento2-code-review/SKILL.md) | ✅ | ✅ | ✅ | ✅ |
 | **Frameworks** | | | | |
 | [magento2-hyva-dev](skills/magento2-hyva-dev/SKILL.md) | ✅ | ✅ | ✅ | ✅ |
 | [magento2-frontend-dev](skills/magento2-frontend-dev/SKILL.md) | ✅ | ✅ | ✅ | ✅ |
