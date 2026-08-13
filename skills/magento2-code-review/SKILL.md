@@ -72,9 +72,11 @@ Full mechanics, exact commands, and the remote-fetch limitation:
    `references/theme-audit-checks.md` instead of the 9-step audit. Full
    split of which checks are static vs. live: `references/scope-modes.md`'s
    "Performance/theme checks by scope".
-5. If the file list touches `di.xml`, `events.xml`, a `Plugin/` class, or an
-   `Observer/` class, run the conflict check in
-   `references/plugin-observer-conflict-check.md`.
+5. If the file list touches `di.xml` (including a `<preference>` addition),
+   `events.xml`, a `Plugin/` class, or an `Observer/` class, run the
+   conflict check in `references/plugin-observer-conflict-check.md` — it
+   now also covers preference conflicts (`M2-ARCH-008`), not just
+   plugin/observer ones.
 6. Merge every finding into the report template below, using
    `magento2-dev-core/references/severity-and-codes.md` — map to an existing
    code before minting a new one.

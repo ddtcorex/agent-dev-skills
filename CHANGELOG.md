@@ -4,6 +4,45 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.8] - 2026-08-13
+
+### Added
+- `magento2-dev-core`: a new "XML Config Merging: Per-File vs. Merged
+  Schema" section in `references/architecture-patterns.md` — many Magento
+  config readers validate a single file against a lenient per-file schema
+  (e.g. Magento_Widget's `widget_file.xsd`, where `class` is optional) and
+  only the fully merged config against the stricter merged schema (`class`
+  required in `widget.xsd`). Documents how to tell which schema actually
+  applies before flagging a missing "required" attribute as a break.
+- `magento2-dev-core`/`magento2-code-review`: new `M2-ARCH-008` code
+  (two or more modules declaring `<preference>` for the same class/
+  interface — silently resolved by merge order, no `sortOrder` arbitration
+  the way plugins have). `plugin-observer-conflict-check.md` (now titled
+  Plugin/Observer/**Preference** Conflict Check) gained a "Find other
+  preferences for the same class/interface" grep step alongside its
+  existing plugin/observer checks.
+- `magento2-code-review`: `theme-audit-checks.md` section 1 now also
+  detects CSP vs. non-CSP Hyvä (`Hyva/default-csp` vs. plain
+  `Hyva/default`/`Hyva/reset`) and whether the CSP view-model mechanism is
+  actually wired up (real class in `vendor/hyva-themes/*`, `hyvaCsp`
+  assigned via a layout `viewModel` argument somewhere) — not just
+  Hyvä-vs-Luma. A missing `registerInlineScript()` call on a theme with no
+  working CSP mechanism is now a non-finding instead of `M2-SEC-010`;
+  `scope-modes.md`'s PR/MR-scope static check references the same gate.
+- `magento2-linter`: guidance for in-project `app/code/Vendor/Module`
+  targets (as opposed to standalone Composer packages) — mount/run a CI
+  wrapper like `magelint` from the project root and scope the actual lint
+  target with its own path flag (e.g. `--path=app/code/Vendor/Module`)
+  instead of trying to isolate the module directory alone, which fails
+  immediately with no `composer.json` to install against.
+- `magento2-linter`: a troubleshooting note for `phpcs --standard=Magento2`
+  failing with "Referenced sniff ... does not exist" — check
+  `composer.lock` before concluding the dependency is missing; if it's
+  already resolved there, a plain `composer install` (safe/idempotent,
+  `Nothing to install, update or remove` is the expected outcome) often
+  fixes it by re-running the package's `installed_paths` registration
+  script.
+
 ## [0.4.7] - 2026-08-13
 
 ### Added

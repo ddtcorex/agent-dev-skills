@@ -167,6 +167,34 @@ public function aroundExecute(
 </type>
 ```
 
+## XML Config Merging: Per-File vs. Merged Schema
+
+Many Magento config readers (`Magento\Framework\Config\Reader\Filesystem` plus a
+`SchemaLocatorInterface` implementation) validate in two passes with two different
+schemas: each individual file is checked against a lenient **per-file schema**
+(`getPerFileSchema()`), then the fully merged config across all modules is checked
+against a stricter **merged schema** (`getSchema()`). Attributes the merged schema
+marks `use="required"` are often optional in the per-file one, precisely because a
+single module's file is expected to extend/override a declaration another module
+already provided in full — not redeclare it from scratch.
+
+`Magento\Widget\Model\Config\SchemaLocator` is a concrete example: it points
+`getSchema()` at `widget.xsd` (`class` attribute required) but `getPerFileSchema()`
+at a separate `widget_file.xsd` (`class` optional — only `id` is required). A
+`<widget id="some_id">` with no `class` in one module's `widget.xml` is completely
+valid on its own if another module's `widget.xml` already declares that same `id`
+with a `class` — the merge fills it in.
+
+**Before flagging a missing "required" XML attribute as something that will break
+validation**, check whether the config type in question actually has this
+two-schema split (grep the relevant `*/Model/Config/SchemaLocator.php` for
+`getPerFileSchema()`), and validate the *single file* against the *per-file* schema,
+not the merged one — `xmllint --noout --schema <per_file_schema> <file>` after
+resolving the schema's `xs:include`d dependencies, or read the per-file schema
+directly if `xmllint` can't resolve Magento's `urn:magento:...` include locations.
+Don't assume a required-looking attribute is missing-and-broken without checking
+which of the two schemas actually applies to a lone file.
+
 ## Factory vs Proxy
 
 ### Factory

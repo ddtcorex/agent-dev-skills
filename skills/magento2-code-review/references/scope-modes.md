@@ -81,9 +81,13 @@ remote fetch):**
   running page, so this is a static read of rule breadth, not the live
   footprint measurement the rest of that workflow step also does.
 - If the file list touches a Hyvä/Luma theme file: the static half of
-  `references/theme-audit-checks.md` — the CSP nonce/pattern check
-  (missing `registerInlineScript()` before an inline `<script>`, per
-  `magento2-hyva-dev`'s CSP section) and the Alpine hydration-root count
+  `references/theme-audit-checks.md` — **run its section 1 CSP-flavor check
+  first** (theme.xml parent + whether a real CSP view-model class/wiring
+  exists at all) before the CSP nonce/pattern check (missing
+  `registerInlineScript()` before an inline `<script>`, per
+  `magento2-hyva-dev`'s CSP section) — a plain `Hyva/default`/`Hyva/reset`
+  theme with no CSP mechanism wired up makes a missing call a non-finding,
+  not `M2-SEC-010`. Also run the Alpine hydration-root count
   (`M2-THEME-002`: `grep -o 'x-data' <file>.phtml | wc -l` per touched
   template) — no build required for either.
 

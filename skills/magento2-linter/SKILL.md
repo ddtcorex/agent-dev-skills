@@ -51,6 +51,28 @@ composer require --dev magento/magento-coding-standard --no-interaction
 composer require --dev bitexpert/phpstan-magento --no-interaction
 ```
 
+**If `phpcs --standard=Magento2` errors with "Referenced sniff ... does not
+exist" or "the Magento2 coding standard is not installed"**, don't
+immediately conclude the dependency is missing from the project. Check
+first whether it's already resolved in `composer.lock` but just not
+registered with phpcs:
+
+```bash
+vendor/bin/phpcs -i   # lists registered standards — is Magento2 there?
+composer show magento/magento-coding-standard 2>&1   # resolved in the lock file?
+```
+
+If the package IS in `composer.lock` (common cause: `magento-coding-standard`
+registers phpcs's `installed_paths` via a Composer plugin/post-install
+script, and that script simply never ran in this container/environment), a
+plain `composer install` fixes it — it re-runs the package scripts without
+touching the lock file. Seeing `Nothing to install, update or remove` is the
+expected, safe outcome; it's still worth then re-running `vendor/bin/phpcs
+-i` to confirm `Magento2` now appears before assuming the fix worked. Only
+report the ruleset as genuinely unavailable (an environment gap worth
+surfacing in a review's Coverage note) if it's absent from `composer.lock`
+entirely or `composer install` doesn't fix the registration.
+
 ## Check the Project's Real CI Setup First
 
 Don't assume a bare `vendor/bin/phpcs` / `vendor/bin/phpstan` invocation matches what the
@@ -136,6 +158,40 @@ negatives/positives before they surface in the real pipeline.
 > a sibling directory at the package root. Placed outside `src/`, it silently fails to autoload,
 > and a phpstan config scoped to `paths: [src]` will skip it entirely without any error, giving a
 > false sense of full coverage.
+
+## In-Project `app/code/` Modules: Scope With a Path, Don't Isolate Them Alone
+
+The isolation advice above is for **standalone Composer packages** (own
+`composer.json`, own git repo). An in-project `app/code/Vendor/Module` is
+the opposite case — it has no `composer.json` of its own and depends on the
+*whole host project's* `vendor/` to resolve Magento framework classes, so
+isolating it alone (copying just that directory into a scratch dir, or
+mounting just that directory as a CI tool's project root) fails immediately
+with something like "No composer.json found" — there's nothing there to
+install against.
+
+For a real per-PHP-version CI wrapper like Sutunam's `magelint` (see the
+project's own `CLAUDE.md` for the exact alias), the fix is to mount/run from
+the **project root** — where `composer.json` and the full `vendor/` context
+actually exist — and use the tool's own path-scoping flag to limit the
+actual lint target to the module, instead of trying to make the module
+directory itself the project root:
+
+```bash
+# WRONG — mounts only the module dir as the project root; fails immediately
+# with "No composer.json found" because app/code/Vendor/Module has none
+docker run --rm -v "$(pwd)/app/code/Vendor/Module":/app ... magelint --php=8.3
+
+# RIGHT — mount/cd the project root (composer.json lives there), scope the
+# actual lint target with --path
+docker run --rm -v "$(pwd)":/app ... magelint --path=app/code/Vendor/Module --php=8.3
+```
+
+Same principle for a bare `vendor/bin/phpcs`/`phpstan` invocation: run it
+from the project root with the module's path as the *target argument*
+(`vendor/bin/phpcs --standard=Magento2 app/code/Vendor/Module`, as in
+"Scoping" below) — never `cd` into the module directory first and expect
+either tool to find the project's own `vendor/autoload.php` from there.
 
 ## Capabilities
 

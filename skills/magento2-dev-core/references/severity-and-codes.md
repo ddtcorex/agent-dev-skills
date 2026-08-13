@@ -26,6 +26,7 @@ not a rewording of an existing row.
 | M2-ARCH-005 | Copy-pasted theme template override | Medium | Silently breaks when Magento changes the original on upgrade — prefer layout XML/view models |
 | M2-ARCH-006 | Extending `Action`, `AbstractModel`, `Template` base classes | Low | Prefer result interfaces, repositories, view models |
 | M2-ARCH-007 | Multiple `around` plugins (or unordered plugins) on the same method with no explicit `sortOrder` | High | Undefined interception order — see `magento2-code-review`'s plugin/observer conflict check |
+| M2-ARCH-008 | Two or more modules declare `<preference>` for the same class/interface | High | Unlike plugins, preferences have no `sortOrder`/arbitration mechanism — the last-merged module's declaration silently wins with no error, discarding the other module's replacement entirely. See `magento2-code-review`'s plugin/observer conflict check, which covers this alongside plugin/observer conflicts. |
 
 `M2-ARCH-004` is for raw SQL used carelessly in place of a Repository or
 Collection call that already does the job — not for a deliberate, isolated
