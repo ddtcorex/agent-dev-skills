@@ -4,6 +4,36 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.12] - 2026-08-13
+
+### Added
+- `magento2-performance-audit`: `references/report-template.md` now requires a
+  **Per-Page Query Detail** section — the complete, unfiltered normalized-query
+  breakdown for every captured page — as a standing part of every
+  database-profiling report, not just the >5-threshold Repeated Query Shapes
+  table. Cross-referenced from `SKILL.md`'s Workflow step 9 and from
+  `database-query-profiling.md` so it isn't only produced when a user happens
+  to ask for it.
+- `magento2-performance-audit`: a fifth capture-integrity habit in
+  `database-query-profiling.md` — a single homepage warmup does not warm every
+  sample page. A real audit saw the same category page read 321, then 676,
+  then 320, then 236 queries across separate passes (cron/daemons ruled out);
+  isolating the page showed each distinct URL pays its own first-visit cold
+  cost after `cache:flush` (layered-nav attribute metadata, category-specific
+  EAV lookups) independent of what else was visited first — visiting the
+  homepage first never pays it on a category/product page's behalf.
+  `per-page-type-audit.md`'s capture loop now warms each URL individually
+  right before its own real capture, and re-runs the full 7-page pass a second
+  time to confirm exact reproducibility.
+- `magento2-performance-audit`: fixed the `base_url` verification habit in
+  `database-query-profiling.md` — checking `core_config_data` directly can
+  report a value the application isn't actually using, since Magento resolves
+  config through a precedence chain (env vars → `app/etc/env.php` locked
+  config → DB → `config.xml` defaults) and a locked/overridden `base_url`
+  silently wins over the DB row. Use `bin/magento config:show
+  web/unsecure/base_url` instead, which resolves the same chain a real
+  request does.
+
 ## [0.4.11] - 2026-08-13
 
 ### Added

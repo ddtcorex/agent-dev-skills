@@ -46,17 +46,18 @@ govard sh -c "bin/magento dev:query-log:enable --include-all-queries=true --incl
 govard sh -c "bin/magento cache:disable full_page block_html layout"
 govard sh -c "bin/magento cache:flush"
 
-# One throwaway request first (discard its output/log) — this lets config/eav/compiled_config
-# caches rebuild after the flush so that one-time rebuild cost doesn't contaminate the
-# per-page numbers you're about to capture. Confirm it's actually 200 before proceeding —
+# One throwaway homepage request first (discard its output/log) — this lets config/eav/
+# compiled_config caches rebuild after the flush. Confirm it's actually 200 before proceeding —
 # a broken warmup means every capture after it is measuring a failure, not a page.
 curl -sk -H "Accept: $ACCEPT" -A "$UA" -o /dev/null -w "warmup: %{http_code}\n" https://store.test/
 govard sh -c "> var/debug/db.log"
 ```
 
+> **This one homepage warmup is not enough on its own — every sample URL needs its own warmup too.** It only rebuilds *global* caches (config/eav/compiled_config); it does nothing for the layered-nav attribute metadata, category-specific EAV lookups, and other page-type-specific data that only get computed and cached the first time that *specific* URL is actually requested. Visiting the homepage first does not pay that cost on a category or product page's behalf — each one pays its own first-visit tax independently, regardless of what else was hit before it. Step 2 below folds a per-URL warmup into the same loop as the real capture — don't skip it and reuse just the homepage warmup for all 7 pages.
+
 ## 2. Capture each page type separately
 
-For each of the (typically 7: 1 home + 3 category + 3 product) URLs, clear the query log, fetch with a realistic `Accept`/User-Agent (see warning in `references/database-query-profiling.md`), save the HTML (for the profiler table) and a copy of the query log, then clear the log again before the next page — **checking the HTTP status every time**, since a non-200 response still produces a plausible-looking HTML file and query log that will silently corrupt every number downstream if you don't check:
+For each of the (typically 7: 1 home + 3 category + 3 product) URLs: **warm that specific URL first** (throwaway request, discard — see the callout above), then clear the query log, fetch with a realistic `Accept`/User-Agent (see warning in `references/database-query-profiling.md`), save the HTML (for the profiler table) and a copy of the query log, then clear the log again before the next page — **checking the HTTP status every time**, since a non-200 response still produces a plausible-looking HTML file and query log that will silently corrupt every number downstream if you don't check:
 
 ```bash
 declare -A urls=(
@@ -70,6 +71,10 @@ declare -A urls=(
 )
 for name in "${!urls[@]}"; do
   url="${urls[$name]}"
+  # Per-page warmup (discard) — this specific URL's own first-visit cold cost, not covered
+  # by the single homepage warmup in step 1.
+  curl -sk -H "Accept: $ACCEPT" -A "$UA" -o /dev/null -w "warmup ($name): %{http_code}\n" "https://store.test$url"
+  govard sh -c "> var/debug/db.log"
   code=$(curl -sk -H "Accept: $ACCEPT" -A "$UA" -o "${name}.html" -w "%{http_code}" "https://store.test$url")
   echo "$name ($url): HTTP $code"
   [ "$code" = "200" ] || echo "  ^ NOT 200 — discard this capture, do not analyze ${name}.html/${name}.db.log"
@@ -77,6 +82,8 @@ for name in "${!urls[@]}"; do
   govard sh -c "> var/debug/db.log"
 done
 ```
+
+After this loop completes, re-run it a second time in full (same URLs, same order) without an additional flush and diff the counts against the first pass — per-URL-warmed numbers should match exactly. If any page still doesn't reproduce, treat it per item 4 in `references/database-query-profiling.md` (re-run that one page in isolation before trusting the number).
 
 Analyze each page's `*.html` for its profiler table (see `references/html-profiler-audit.md` for what each column means and how to trace custom-code cost) and each `*.db.log` for total query count, repeated/duplicate query shapes (candidate N+1s), and — using the call stack in each entry — the exact file:line responsible for the worst offenders.
 

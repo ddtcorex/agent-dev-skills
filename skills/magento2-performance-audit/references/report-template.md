@@ -52,6 +52,7 @@ Always state the exact URLs tested, not just "homepage/category/product" — wit
 ## Database
 - [ ] Query count recorded for homepage/category/product (uncached — see Per-Page-Type Audit) and compared against this project's baseline if one exists, or the tier table under Query Count: Tiers, Not a Pass/Fail Gate if this is the first audit
 - [ ] Repeated Query Shapes table below is populated — every shape appearing more than ~5 times on any single page load is listed, not just the ones already confirmed as bugs (or explicitly stated: none found)
+- [ ] Per-Page Query Detail below is populated — the *complete* normalized query breakdown for every captured page, not filtered to the >5 threshold (this is a standing report component, not optional)
 - [ ] Note: on a small/fast local DB, absolute query time can look fine even when count is over budget — flag on count, not just time
 - [ ] Note: this count only covers the initial server-rendered HTML request — it does not include the page's own client-side AJAX/GraphQL follow-up calls (see Client-Side AJAX Load above). A low DB query count does not mean low total backend cost if the page defers real work to those follow-up requests instead of the initial render — report both together, not the DB count in isolation.
 - [ ] Slow Query Analysis run (app-level `TIME:` sort and/or MySQL slow_query_log) — any query found `EXPLAIN`ed to confirm `type: ALL`/missing index before reporting it as a real finding, and slow_query_log turned back off afterward if it was enabled for this audit
@@ -78,6 +79,30 @@ Cross-reference the two diagnostic signals from `references/per-page-type-audit.
 count: a shape repeated across *all* page types points to a global block (site-wide fix); a
 shape whose count scales with the small/medium/large category (or product-list) samples points
 to a per-item loop that gets worse as the catalog grows.
+
+### Per-Page Query Detail
+
+A **standing, mandatory part of every database-profiling report** — not something to add only
+when specifically asked for. The Repeated Query Shapes table above is filtered to a >5 threshold
+and exists to surface likely N+1 candidates; this section is the unfiltered complement: for each
+of the 7 captured pages, the complete list of every distinct normalized query shape that ran on
+that page load, with its count. It's what turns a one-off audit into reference documentation —
+a later audit (or a teammate) can diff against it to see exactly what changed, rather than relying
+on memory of "roughly what a category page used to query."
+
+For each page:
+
+| Count | SQL (normalized) |
+|---|---|
+| 22 | `SELECT eav_attribute.* WHERE attribute_code=? AND entity_type_id=?` |
+| 20 | `SELECT catalog_eav_attribute.* WHERE attribute_id=?` |
+| 1 | `SELECT ... FROM cms_block WHERE block_id=?` |
+
+If publishing as a rendered Artifact, put each page's table inside a collapsed `<details>` block
+(page name + total count + distinct-shape count in the `<summary>`) so the report stays scannable
+rather than dominated by 7 long tables. In plain markdown, a `<details>`/`<summary>` block works
+the same way in GitHub-flavored Markdown; fall back to one table per page under its own
+subheading if the renderer doesn't support it.
 
 ## Block/Template Rendering (HTML Profiler)
 - [ ] Slowest Blocks/Templates table below is populated for every captured page — every timer using more than ~5% of that page's total time, or firing double-digit-or-higher `Cnt`, is listed (or explicitly stated: none found)
