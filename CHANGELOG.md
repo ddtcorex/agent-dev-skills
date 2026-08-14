@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.15] - 2026-08-14
+
+### Added
+- `magento2-performance-audit`: `references/database-query-profiling.md` documents a
+  core-Magento pattern where `catalog_product_entity_tier_price`/`catalogrule_product_price`
+  fire once per displayed product on category pages, traced initially (wrongly) to a
+  project's own pricing plugin — the plugin is structurally identical to core's own
+  `BasePrice::getValue()`. The real mechanism: `Layer\Category\CollectionFilter`'s default
+  `addFinalPrice()` sets `tier_price` to a scalar/`NULL` from the price index, which fails
+  `TierPrice::getStoredTierPrices()`'s `is_array()` check regardless, and
+  `catalog_rule_price` isn't in that join's columns at all. Confirmed on a vanilla install
+  (same scaling, 9–24/page) — the count gap was `catalog/frontend/grid_per_page` being
+  ~2x, not a code difference. Includes the "diff an `around` plugin against core before
+  naming it root cause" rule and the `hasData()`-based batch-load fix.
+- `magento2-performance-audit`: `references/code-level-patterns.md` adds two short
+  false-positive callouts to the existing N+1/collection-counting patterns (a `Form`
+  vs. `Grid` DataProvider matching the N+1 grep is usually one row, not a scaling bug; a
+  `count($collection->getItems())` after an earlier `foreach` on the same instance is
+  free, not a live query) and a new "Batch-Preload Plugins Must Stay FPC-Safe" section —
+  any `SessionManagerInterface`-backed session (customer, checkout/quote, not just
+  customer group) read inside a batch-preload plugin on a listing block risks starting a
+  session for anonymous FPC-cached traffic; read `Http\Context` instead, the same
+  Vary-cookie signal core's own FPC-safe price code uses.
+
+### Fixed
+- The first draft of both entries above ran long (884 words prose vs. this hub's ~170–220
+  word house style for a single lesson) — cut narrative restatement of the correction,
+  kept the mechanism, the two verification checks, and the fix code.
+
 ## [0.4.14] - 2026-08-13
 
 ### Changed

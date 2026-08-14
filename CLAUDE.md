@@ -104,6 +104,22 @@ cross-tool-sharing convention along with `compatibility` and `metadata`):
 When editing a dependency's SKILL.md (`magento2-dev-core`, `govard-toolbox`),
 check whether the change invalidates guidance in the skills that depend on it.
 
+### Adding a lesson to a skill reference file
+
+**MUST:** load the `superpowers:writing-skills` skill before writing content, not
+just as a style check afterward — it governs testing and structure, not only length.
+
+**MUST:** budget ~170–220 words of prose per lesson (a `>` callout or `##` section
+documenting one real finding), excluding code blocks — this hub's own established
+house style. Measure the section in isolation before calling it done:
+```bash
+sed -n '/## Lesson Heading/,/## Next Heading/p' path/to/file.md | sed '/```/,/```/d' | wc -w
+```
+This has been missed and fixed after the fact **twice** (0.4.13→0.4.14,
+0.4.14→0.4.15 — see CHANGELOG.md). Both times the overage came from narrating the
+investigation ("first I thought X was the cause, then I discovered Y") — state the
+corrected mechanism directly, don't walk the reader through how you got there.
+
 ### `install.sh` design
 
 One-line installer/updater (`curl -fsSL .../install.sh | bash`). Key points if

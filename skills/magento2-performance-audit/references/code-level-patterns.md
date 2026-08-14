@@ -36,6 +36,8 @@ foreach ($collection as $product) {
 }
 ```
 
+> **A textual match isn't proof of a scaling bug — check what the collection is scoped to.** A `Ui\...\Form\DataProvider::getData()` (not `Grid\DataProvider`) matching this exact shape is usually harmless: Magento filters Form providers to the one entity id from the request, so it's one extra query on one row, not an N+1.
+
 ## Collection Counting
 
 ```php
@@ -45,6 +47,8 @@ $count = count($this->collection->create()->getItems());
 // CORRECT - Lightweight count query
 $count = $this->collection->create()->getSize();
 ```
+
+> **Check whether the collection was already loaded earlier in the same method.** `count($collection->getItems())` only queries if the collection hasn't loaded yet — after an earlier `foreach`/`->load()` on the same instance, `getItems()` is free (cached array), and switching it to `getSize()` changes behavior (a fresh count) for no benefit.
 
 ## Uncacheable Blocks
 
@@ -61,6 +65,23 @@ $count = $this->collection->create()->getSize();
     </arguments>
 </referenceBlock>
 ```
+
+## Batch-Preload Plugins Must Stay FPC-Safe
+
+A batch-preload plugin (the standard fix for a per-item N+1 — see the Known Core-Magento Pattern in `references/database-query-profiling.md`) usually sits on a listing block's collection method (`getLoadedProductCollection()`, `createCollection()`), which commonly renders on `full_page`-cached pages. **Any** `SessionManagerInterface`-backed session — `Customer\Model\Session`, `Checkout\Model\Session`/quote session, not just customer group — starts a PHP session on first read. Reading one here forces a session for anonymous visitors on every cache miss, or risks a session-derived value leaking into a response FPC serves to other visitors.
+
+```php
+// WRONG - opens a session inside code that renders on an FPC-cached page
+public function __construct(private Session $customerSession) {}
+$groupId = $this->customerSession->getCustomerGroupId();
+
+// CORRECT - the same Vary-cookie signal core's own FPC-safe price code uses
+// (Layer\Filter\Price, Indexer\Product\Price\Plugin\TableResolver)
+public function __construct(private HttpContext $httpContext) {}
+$groupId = (int)($this->httpContext->getValue(CustomerContext::CONTEXT_GROUP) ?? Group::NOT_LOGGED_IN_ID);
+```
+
+Rule of thumb: if the target method's block is one Magento normally serves from FPC, no code in the plugin may touch a session object, however small or read-only the read looks.
 
 ## Heavy Constructors
 

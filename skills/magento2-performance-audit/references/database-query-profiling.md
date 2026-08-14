@@ -113,6 +113,43 @@ public function aroundGetParentIdsByChild($subject, callable $proceed, $childId)
 
 Memoize **per request only** — self-healing the moment a configurable product is added, with zero stale-cache logic to maintain.
 
+## Known Core-Magento Pattern: Tier-Price / Catalog-Rule-Price Fires Once Per Displayed Product
+
+These two shapes repeated 13→46→46 across small/medium/large category samples (46 = the store's `catalog/frontend/grid_per_page`, not the category's product count):
+
+```
+SELECT catalog_product_entity_tier_price.* WHERE website_id=? AND entity_id=? ORDER BY qty ASC
+SELECT catalogrule_product_price.product_id, rule_price WHERE rule_date=? AND website_id=? AND customer_group_id=? AND product_id IN(?)
+```
+
+The call stack traced into a project's own `aroundGetValue()` pricing plugin, reported as root cause. **Wrong.** The plugin is structurally identical to core's own `BasePrice::getValue()` (same loop, same `min()` pattern) — the real mechanism is Magento-native: `Layer\Category\CollectionFilter` already calls `addFinalPrice()` by default, which joins `catalog_product_index_price` and sets `tier_price` to a scalar or `NULL` — but `TierPrice::getStoredTierPrices()` requires `is_array()`, so its fallback query fires regardless of whether `addFinalPrice()` ran. `catalog_rule_price` isn't in that join's column list at all, so it always falls back too. Confirmed on a vanilla install too (9–24/page, same scaling); the count gap vs. the audited project was `catalog/frontend/grid_per_page` being ~2x, not a code difference.
+
+**Before naming an `around` plugin as root cause, diff it against the core method it wraps** — an `around` plugin that never calls `$proceed()` looks fully responsible from the call stack alone, but if its loop matches core's, the custom code isn't adding cost. Check `catalog/frontend/grid_per_page`/`list_per_page` before comparing counts across stores.
+
+**Fix** — batch-load once per grid via the `hasData()` escape hatch both price models already check:
+
+```php
+// afterGetLoadedProductCollection() on Magento\Catalog\Block\Product\ListProduct
+$collection->addTierPriceData(); // core's own batch method
+
+$productIds = [];
+foreach ($collection->getItems() as $item) {
+    if (!$item->hasData('catalog_rule_price')) {
+        $productIds[] = (int)$item->getId();
+    }
+}
+if ($productIds) {
+    $rulePrices = $this->ruleResource->getRulePrices($date, $websiteId, $groupId, $productIds); // Rule::getRulePrices()
+    foreach ($collection->getItems() as $item) {
+        if (!$item->hasData('catalog_rule_price')) {
+            $item->setData('catalog_rule_price', $rulePrices[$item->getId()] ?? false);
+        }
+    }
+}
+```
+
+See `references/code-level-patterns.md`'s FPC-safety section for the session-read gotcha this fix runs into.
+
 ## Slow Query Analysis
 
 The query-count/N+1 audit above catches queries that run *too often*; it says nothing about queries that are individually slow (a missing index, an expensive JOIN, a huge unbounded scan) — those need their own check, and they matter even when the total query count looks healthy. Two complementary levels, cheapest first:
