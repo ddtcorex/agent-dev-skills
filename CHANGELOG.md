@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.16] - 2026-08-15
+
+### Changed
+- `magento2-performance-audit`: tightened query-profiling guidance to the hub's lesson budget.
+  It now requires request-scoped, multi-line trace parsing; comparable URL/context baselines; and
+  evidence-based classification of repeated SQL as core, customization-triggered, or
+  customization-amplified. Includes the Magento bundle-price attribution guardrail.
+
 ## [0.4.15] - 2026-08-14
 
 ### Added

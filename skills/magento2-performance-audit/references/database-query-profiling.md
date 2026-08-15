@@ -52,6 +52,30 @@ govard sh -c "grep -c '## QUERY' var/debug/db.log"
 govard sh -c "bin/magento dev:query-log:disable"
 ```
 
+### Capture integrity and query attribution
+
+`db.log` is process-shared: cron/consumer traffic and shutdown writes can enter a
+capture after `curl` returns. A `grep -c` is therefore provisional. For each page,
+clear the log, allow prior writes to settle, make one request, wait again, copy the log, then
+disable and clear logging. With call stacks enabled, split at the timestamp header and retain only
+`## ... ## QUERY` records whose *complete multi-line record* contains
+`Magento\\Framework\\App\\Http`; a line-oriented `TRACE:.*App\\Http` regex misses valid frontend
+records.
+
+Compare before/after query counts only for the same effective URL (path, query string,
+pagination, store/currency/customer context), request headers, cache state, and product
+composition. Record the URL and displayed product count. A differently composed category
+or widget page is a separate sample, not evidence of a regression.
+
+Trace each repeated shape from the SQL resource method to the first semantic caller, then compare
+any plugin or template override with core. Label the result **core behavior**,
+**customization-triggered**, or **customization-amplified**; a custom namespace in an interceptor
+stack alone proves none of these. For bundle listings, Magento's
+`DefaultSelectionPriceListProvider` can load selections per bundle option. An `isSalable()` plugin
+seen after that query is not its cause; inspect any `Magento_Bundle` price-template override to
+determine whether it adds price calls or merely renders a bundle-heavy product mix before choosing
+a batch preload or rendering change.
+
 > **Two-pass strategy keeps log volume sane.** `--include-call-stack=true` walks and serializes a full PHP stack trace for *every* query — several MB per page, and that compounds fast once you're capturing 3 page types (see `references/per-page-type-audit.md`). Run pass 1 with `--include-call-stack=false` (or just omit repeated shapes/counts are all you need to spot an N+1 candidate) across every page you're auditing; only re-enable `--include-call-stack=true` for a second, targeted re-capture of the specific page(s) whose repeated shape you're now tracing to a file:line. Stack-walking every page from the start is the slower, heavier default — reserve it for the one or two pages that actually need it.
 
 ## Common Query Issues
