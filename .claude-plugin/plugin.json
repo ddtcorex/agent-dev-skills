@@ -1,6 +1,6 @@
 {
   "name": "agent-dev-skills",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Universal AI Agent Development Skills Hub & Cordis Plugin -- currently Magento 2 (architecture, linting, performance, security) and Govard dev-environment orchestration, with more stacks over time",
   "author": {
     "name": "DDTCoreX",

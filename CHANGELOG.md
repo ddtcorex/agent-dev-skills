@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-08-18
+
+### Changed
+- Standardized marketplace publisher scope to `ddtcorex` across Claude Code (`.claude-plugin/marketplace.json`) and Codex CLI (`.agents/plugins/marketplace.json`).
+- Updated plugin install command syntax to `agent-dev-skills@ddtcorex` across all documentation.
+
 ## [1.0.0] - 2026-08-18
 
 ### Added

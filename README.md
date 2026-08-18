@@ -97,18 +97,18 @@ After installation, open DSH Web GUI → **New Chat** → select **"Agent Dev Sk
 ### 2. Claude Code — As a Plugin
 ```bash
 /plugin marketplace add ddtcorex/agent-dev-skills
-/plugin install agent-dev-skills@agent-dev-skills
+/plugin install agent-dev-skills@ddtcorex
 ```
-Updates: `/plugin marketplace update agent-dev-skills`.
+Updates: `/plugin marketplace update ddtcorex`.
 
 ---
 
 ### 3. Codex CLI — As a Plugin
 ```bash
 codex plugin marketplace add ddtcorex/agent-dev-skills
-codex plugin add agent-dev-skills@agent-dev-skills
+codex plugin add agent-dev-skills@ddtcorex
 ```
-Updates: `codex plugin marketplace upgrade agent-dev-skills`.
+Updates: `codex plugin marketplace upgrade ddtcorex`.
 
 ---
 

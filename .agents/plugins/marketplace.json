@@ -1,7 +1,7 @@
 {
-  "name": "agent-dev-skills",
+  "name": "ddtcorex",
   "interface": {
-    "displayName": "Agent Dev Skills"
+    "displayName": "DDTCoreX Marketplace"
   },
   "plugins": [
     {

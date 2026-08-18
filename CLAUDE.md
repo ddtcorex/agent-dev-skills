@@ -44,12 +44,11 @@ both point at the *same* `skills/` directory so neither duplicates content:
   `.agents/plugins/marketplace.json` that self-lists this repo the same way
   (`"source": {"source": "local", "path": "./"}`). Verified end-to-end
   against the real `codex` binary: `codex plugin marketplace add .` then
-  `codex plugin add dev-skills-hub@dev-skills-hub` resolves all 11 skills
+  `codex plugin add agent-dev-skills@ddtcorex` resolves all 11 skills
   with zero copying.
 
-Both marketplaces' top-level `name` and the plugin's `name` are kept
-identical (`dev-skills-hub`) on purpose, so `plugin install
-dev-skills-hub@dev-skills-hub` reads as one coherent thing on either tool.
+The marketplace top-level `name` is `ddtcorex` and the plugin's `name` is `agent-dev-skills`,
+so `plugin install agent-dev-skills@ddtcorex` reads as `<plugin>@<publisher>` on either tool.
 The **version field must be bumped in three places together** —
 `.claude-plugin/plugin.json`'s `version`, `.claude-plugin/marketplace.json`'s
 `plugins[0].version` / `metadata.version`, and `.codex-plugin/plugin.json`'s
@@ -154,23 +153,23 @@ actually link/unlink files correctly?).
 claude plugin validate . --strict
 
 # Inspect what the plugin loader actually resolves (skills found, token cost)
-claude --plugin-dir . plugin details dev-skills-hub
+claude --plugin-dir . plugin details agent-dev-skills
 
 # Full local install/uninstall round-trip against the working tree (not a
 # published release) -- always clean up after testing, this registers real
 # state in the local Claude Code config:
 claude plugin marketplace add .
-claude plugin install dev-skills-hub@dev-skills-hub
+claude plugin install agent-dev-skills@ddtcorex
 # ... test ...
-claude plugin uninstall dev-skills-hub@dev-skills-hub
-claude plugin marketplace remove dev-skills-hub
+claude plugin uninstall agent-dev-skills@ddtcorex
+claude plugin marketplace remove ddtcorex
 
 # Codex CLI has no `plugin validate` subcommand -- the only real check is a
 # live round-trip. Use $CODEX_HOME to keep it out of your real Codex config:
 export CODEX_HOME=$(mktemp -d)
 codex plugin marketplace add .
-codex plugin list --available --json   # confirm dev-skills-hub@dev-skills-hub is listed
-codex plugin add dev-skills-hub@dev-skills-hub
+codex plugin list --available --json   # confirm agent-dev-skills@ddtcorex is listed
+codex plugin add agent-dev-skills@ddtcorex
 codex plugin list --json               # confirm it installed and all 11 skills resolved
 unset CODEX_HOME                       # the temp dir is disposable -- nothing else to clean up
 
@@ -199,7 +198,7 @@ manual release step in the GitHub UI.
 4. Bump `"version"` in `.codex-plugin/plugin.json` to the same value
    (`.agents/plugins/marketplace.json` has no version field to update).
 5. If `skills/` changed, run `claude plugin validate . --strict` and
-   `claude --plugin-dir . plugin details dev-skills-hub` locally first; for a
+   `claude --plugin-dir . plugin details agent-dev-skills` locally first; for a
    change that affects Codex specifically, also run the
    `codex plugin marketplace add .` / `codex plugin add` round-trip from the
    Commands section above.
@@ -211,8 +210,8 @@ manual release step in the GitHub UI.
    ```
 7. Confirm the workflow succeeded and the release published:
    ```bash
-   gh run list --repo ddtcorex/dev-skills-hub --limit 1
-   gh release view vX.Y.Z --repo ddtcorex/dev-skills-hub
+   gh run list --repo ddtcorex/agent-dev-skills --limit 1
+   gh release view vX.Y.Z --repo ddtcorex/agent-dev-skills
    ```
 8. If the workflow fails on the changelog-extraction step, it's almost always
    because the `## [X.Y.Z]` header in `CHANGELOG.md` doesn't exactly match the
