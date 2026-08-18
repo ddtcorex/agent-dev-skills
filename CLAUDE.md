@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A dual-ecosystem plugin (`dev-skills-hub`) bundling 11 Magento 2 and Govard
+A dual-ecosystem plugin (`agent-dev-skills`) bundling 11 Magento 2 and Govard
 development skills, distributed via self-listing marketplaces for both Claude
 Code and Codex CLI. There is no build step, no test suite, and no application
 code — the repository *is* the plugin (in both ecosystems at once), and its
@@ -125,7 +125,7 @@ One-line installer/updater (`curl -fsSL .../install.sh | bash`). Key points if
 modifying it:
 
 - **Clone-once-to-cache, link-out-per-tool**: clones this repo into
-  `~/.dev-skills-hub` (override: `DEV_SKILLS_HUB_HOME`); re-running the same
+  `~/.agent-dev-skills` (override: `AGENT_DEV_SKILLS_HOME`); re-running the same
   command is the update path (`git pull --ff-only` + re-link) — there is no
   separate `update.sh`.
 - **TTY handling follows the rustup-init.sh pattern**: `[ -t 0 ]` for a real
@@ -138,7 +138,7 @@ modifying it:
   as user-owned and skipped unless `--force` — this is what stops the
   installer from clobbering a user's own hand-written skill of the same name.
   Don't remove this check to "simplify" the linking loop.
-- Env vars mirror the flags and are prefixed `DEV_SKILLS_HUB_*` (`_HOME`,
+- Env vars mirror the flags and are prefixed `AGENT_DEV_SKILLS_*` (`_HOME`,
   `_SCOPE`, `_TARGET`, `_SKILLS`, `_MODE`) — keep this prefix if adding new
   configurable behavior.
 
@@ -175,7 +175,7 @@ unset CODEX_HOME                       # the temp dir is disposable -- nothing e
 
 # install.sh: syntax check and dry test in an isolated scratch dir (never
 # test --scope personal against your real $HOME -- override HOME and
-# DEV_SKILLS_HUB_HOME to a scratch path first). Note: install.sh's REPO_URL
+# AGENT_DEV_SKILLS_HOME to a scratch path first). Note: install.sh's REPO_URL
 # points at GitHub, so testing local/uncommitted changes to skills/ requires
 # either a temporary local git remote (init+commit a scratch copy and point
 # REPO_URL at it) or pushing first -- git clone never sees uncommitted work.

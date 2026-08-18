@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-08-18
+
+### Changed
+- Standardized marketplace publisher scope to `ddtcorex` across Claude Code (`.claude-plugin/marketplace.json`) and Codex CLI (`.agents/plugins/marketplace.json`).
+- Updated plugin install command syntax to `agent-dev-skills@ddtcorex` across all documentation.
+- Replaced all remaining `dev-skills-hub` references with `agent-dev-skills` in CHANGELOG.md and CLAUDE.md.
+
 ## [1.0.1] - 2026-08-18
 
 ### Changed
@@ -445,7 +452,7 @@ All notable changes to this project are documented here. The format follows
   `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` pair. This repo is now
   installable as a plugin on both Claude Code and Codex CLI from the same source. Verified
   end-to-end against the real `codex` CLI (`codex plugin marketplace add .` /
-  `codex plugin add dev-skills-hub@dev-skills-hub`) — all 10 skills resolve correctly.
+  `codex plugin add agent-dev-skills@ddtcorex`) — all 10 skills resolve correctly.
 - `.github/workflows/release.yml` now also validates `.codex-plugin/plugin.json` and
   `.agents/plugins/marketplace.json` (`jq empty`) on every tagged release.
 - README: new "Codex CLI — as a plugin" install section, and a directory-structure entry for
@@ -455,7 +462,7 @@ All notable changes to this project are documented here. The format follows
 - `magento2-performance-audit`: split from a single 9,349-word SKILL.md into a lean ~1,165-word
   SKILL.md plus 8 `references/*.md` files (one per audit category), following current
   progressive-disclosure skill-authoring guidance. Cuts the skill's on-invoke token cost from
-  ~24.3k to ~3k (verified via `claude --plugin-dir . plugin details dev-skills-hub`) — previously
+  ~24.3k to ~3k (verified via `claude --plugin-dir . plugin details agent-dev-skills`) — previously
   ~4x every other skill in this repo, now in line with the rest. No content was cut, only moved;
   the mandatory-checklist framing, workflow steps, and self-verification gate stay in SKILL.md
   exactly as before.
@@ -621,9 +628,9 @@ what a "full flush" looks like in `debug.log`.
 ### Added
 - Packaged the skill collection as a Claude Code plugin (`.claude-plugin/plugin.json`,
   self-listing `marketplace.json` with `"source": "./"`), installable with
-  `/plugin marketplace add ddtcorex/dev-skills-hub` + `/plugin install dev-skills-hub@dev-skills-hub`.
+  `/plugin marketplace add ddtcorex/agent-dev-skills` + `/plugin install agent-dev-skills@ddtcorex`.
 - `install.sh`, a one-line installer/updater (`curl -fsSL .../install.sh | bash`):
-  clones into `~/.dev-skills-hub` and links each skill into whichever directory
+  clones into `~/.agent-dev-skills` and links each skill into whichever directory
   Claude Code, OpenCode, Codex CLI, or GitHub Copilot scans, with project/personal
   scope, symlink/copy modes, selective skill/target install, and `--uninstall`.
 - 10 skills: `magento2-dev-core`, `magento2-linter`, `magento2-performance-audit`,
@@ -636,6 +643,6 @@ what a "full flush" looks like in `debug.log`.
   [Agent Skills standard](https://agentskills.io) (also adopted by OpenCode,
   Codex CLI, and GitHub Copilot) expects.
 - Renamed the project — repo, plugin, and marketplace — from `ai-skills` to
-  `dev-skills-hub`, and repositioned the description around "development
+  `agent-dev-skills`, and repositioned the description around "development
   skills" generally rather than only the Magento 2 / Govard skills bundled
   today.
