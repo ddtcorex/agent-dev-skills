@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-08-18
+
+### Added
+- DeepSeek Harness (DSH) Cordis Plugin support (`@ddtcorex/agent-dev-skills`).
+- DeepSeek Harness Agent Preset `"Agent Dev Skills (Govard & Frameworks)"` (`.dsh-plugin/`).
+- `--target dsh` support in `install.sh` to install both skills and DSH Agent Preset.
+
+### Changed
+- Rebranded repository to `agent-dev-skills` (`@ddtcorex/agent-dev-skills`).
+- Expanded project scope to Universal AI Agent Development Skills Hub centered around Govard environment orchestration and supported web frameworks (Magento 2, Laravel, etc.).
+- Updated plugin manifests across Claude Code, Codex CLI, OpenCode, GitHub Copilot, and DeepSeek Harness.
+
 ## [0.4.16] - 2026-08-15
 
 ### Changed

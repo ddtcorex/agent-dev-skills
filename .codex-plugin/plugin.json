@@ -1,25 +1,27 @@
 {
-  "name": "dev-skills-hub",
-  "version": "0.4.16",
-  "description": "An extensible hub of AI development skills -- currently Magento 2 (architecture, linting, performance, security) and Govard dev-environment orchestration, with more stacks over time",
+  "name": "agent-dev-skills",
+  "version": "1.0.0",
+  "description": "Universal AI Agent Development Skills Hub & Cordis Plugin for Govard & supported web frameworks (Magento 2, Laravel, etc.)",
   "author": {
     "name": "DDTCoreX",
     "email": "kaido4492@gmail.com"
   },
-  "homepage": "https://github.com/ddtcorex/dev-skills-hub",
-  "repository": "https://github.com/ddtcorex/dev-skills-hub",
+  "homepage": "https://github.com/ddtcorex/agent-dev-skills",
+  "repository": "https://github.com/ddtcorex/agent-dev-skills",
   "license": "MIT",
   "keywords": [
+    "govard",
     "magento2",
+    "laravel",
     "php",
     "hyva",
     "knockout",
     "performance-audit",
     "security-scan",
     "linting",
-    "govard",
-    "laravel",
-    "devops"
+    "devops",
+    "cordis",
+    "deepseek-harness"
   ],
   "skills": "./skills/"
 }

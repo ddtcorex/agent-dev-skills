@@ -8,6 +8,11 @@ Thumbs.db
 *.swp
 *~
 
+# Build outputs & dependencies
+node_modules/
+lib/
+*.tsbuildinfo
+
 # Personal Claude Code plugin settings (see plugin-settings convention)
 .claude/*.local.md
 

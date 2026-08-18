@@ -1,11 +1,11 @@
 {
-  "name": "dev-skills-hub",
+  "name": "agent-dev-skills",
   "interface": {
-    "displayName": "Dev Skills Hub"
+    "displayName": "Agent Dev Skills"
   },
   "plugins": [
     {
-      "name": "dev-skills-hub",
+      "name": "agent-dev-skills",
       "source": {
         "source": "local",
         "path": "./"
