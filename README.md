@@ -88,9 +88,9 @@ curl -fsSL https://raw.githubusercontent.com/ddtcorex/agent-dev-skills/master/in
 ```
 This automatically installs:
 - All skills into `~/.dsh/skills/`
-- Agent Preset **"Agent Dev Skills (Govard & Frameworks)"** into `~/.dsh/.agent-presets/agent-dev-skills/`
+- Agent Preset **"Govard Dev Agent"** into `~/.dsh/.agent-presets/agent-dev-skills/`
 
-After installation, open DSH Web GUI → **New Chat** → select **"Agent Dev Skills (Govard & Frameworks)"** from the Agent picker.
+After installation, open DSH Web GUI → **New Chat** → select **"Govard Dev Agent"** from the Agent picker.
 
 ---
 

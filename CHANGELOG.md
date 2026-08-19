@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] - 2026-08-18
+
+### Changed
+- Renamed DeepSeek Harness Agent Preset from `"Agent Dev Skills (Govard & Frameworks)"` to `"Govard Dev Agent"`.
+
 ## [1.0.2] - 2026-08-18
 
 ### Changed
@@ -21,7 +26,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 - DeepSeek Harness (DSH) Cordis Plugin support (`@ddtcorex/agent-dev-skills`).
-- DeepSeek Harness Agent Preset `"Agent Dev Skills (Govard & Frameworks)"` (`.dsh-plugin/`).
+- DeepSeek Harness Agent Preset `"Govard Dev Agent"` (`.dsh-plugin/`).
 - `--target dsh` support in `install.sh` to install both skills and DSH Agent Preset.
 
 ### Changed
