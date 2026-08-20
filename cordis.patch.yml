@@ -1,0 +1,6 @@
+# DeepSeek Harness (dsh) bundle patch: registers the agent-dev-skills Cordis
+# plugin (src/index.ts -> lib/index.js), which mounts a ctx.skills provider
+# reading every packaged skills/<name>/SKILL.md in this repository.
+- insert:
+    - id: agent-dev-skills
+      name: agent-dev-skills
