@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.4] - 2026-08-20
+
+### Fixed
+- DeepSeek Harness (DSH) submission gate: `package.json` declared `"dsh.bundle": true` as a
+  flat key, which the awesome-dsh-plugin CI check does not recognize — it reads the nested
+  `dsh.bundle.patch` path. Added the missing root `cordis.patch.yml` and switched the manifest
+  to `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`, matching the shape the Cordis
+  plugin loader (and the submission gate) actually expects. `src/index.ts`'s skill-provider
+  bundle and the `.dsh-plugin/` Agent preset were already real and functional — only the
+  manifest wiring was wrong.
+
 ## [1.0.3] - 2026-08-18
 
 ### Changed

@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Universal AI Agent Development Skills Hub & Cordis Plugin for Govard & supported web frameworks",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   "plugins": [
     {
       "name": "agent-dev-skills",
       "source": "./",
       "description": "Universal AI Agent Development Skills Hub & Cordis Plugin for Govard & supported web frameworks (Magento 2, Laravel, etc.)",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "author": {
         "name": "DDTCoreX",
         "email": "kaido4492@gmail.com"
