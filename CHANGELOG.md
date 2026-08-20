@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [1.0.5] - 2026-08-20
 
 ### Changed
-- `magento2-linter` now points at Govard's native `govard audit run` (project/module_in_project/standalone target-mode resolution, native PHP-matrix policy, `--lint-provider` for optional external gates) as the authoritative Magento lint workflow, replacing a vendor CI wrapper (Sutunam's `magelint` script) as the primary gate. `magento2-code-review`, `govard-magento`, and `govard-toolbox`'s command reference now link to that authority instead of duplicating its PHP-matrix/provider policy. Depends on [ddtcorex/govard#151](https://github.com/ddtcorex/govard/pull/151) (merged, released through `v1.63.0-beta.5`).
+- `magento2-linter` now points at Govard's native `govard audit run` (project/module_in_project/standalone target-mode resolution, native PHP-matrix policy, `--lint-provider` for optional external gates) as the authoritative Magento lint workflow, replacing a vendor CI wrapper script as the primary gate. `magento2-code-review`, `govard-magento`, and `govard-toolbox`'s command reference now link to that authority instead of duplicating its PHP-matrix/provider policy. Depends on [ddtcorex/govard#151](https://github.com/ddtcorex/govard/pull/151) (merged, released through `v1.63.0-beta.5`).
 - Documented previously-missing `--allow-lint-ssh-agent` and `--lint-jobs` flags, and corrected the PHP 8.0 support policy (real for `project`/`module_in_project`, with a toolchain-version caveat) and the `--lint-provider <name>` invocation form (no separate `--provider` flag) against the real shipped CLI.
 
 ## [1.0.4] - 2026-08-20
