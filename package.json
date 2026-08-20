@@ -2,6 +2,7 @@
   "name": "@ddtcorex/agent-dev-skills",
   "version": "1.0.3",
   "description": "Universal AI Agent Development Skills Hub & Cordis Plugin",
+  "dsh.bundle": true,
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
