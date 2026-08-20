@@ -197,23 +197,36 @@ manual release step in the GitHub UI.
    `plugins[0].version` and top-level `metadata.version` — to the same value.
 4. Bump `"version"` in `.codex-plugin/plugin.json` to the same value
    (`.agents/plugins/marketplace.json` has no version field to update).
-5. If `skills/` changed, run `claude plugin validate . --strict` and
+5. Bump `"version"` in `package.json` to the same value — this is the npm
+   manifest for the DeepSeek Harness/Cordis distribution
+   (`@ddtcorex/agent-dev-skills`), a separate publish target from the
+   Claude/Codex plugin manifests above. The release workflow does not
+   validate or read it, so nothing enforces this automatically; keep it in
+   sync by hand.
+6. If `skills/` changed, run `claude plugin validate . --strict` and
    `claude --plugin-dir . plugin details agent-dev-skills` locally first; for a
    change that affects Codex specifically, also run the
    `codex plugin marketplace add .` / `codex plugin add` round-trip from the
-   Commands section above.
-6. Commit, then tag and push:
+   Commands section above. If `src/` (the DSH Cordis plugin) changed, run
+   `npm run build` (`tsc`) — this is the only local DSH-side check available;
+   there is no local equivalent of the Claude/Codex marketplace-add round-trip
+   (`npx cordis` fails locally: the installed `@deepseek-ai/cordis` package
+   depends on `@deepseek-ai/cordis-plugin-loader`, which is not a project
+   dependency here). The real DSH validation gate is external and CI-only —
+   the `awesome-dsh-plugin` submission check that reads `dsh.bundle.patch`
+   (see the `[1.0.4]` CHANGELOG entry for the manifest shape it expects).
+7. Commit, then tag and push:
    ```bash
    git tag -a vX.Y.Z -m "vX.Y.Z - <one-line summary>"
    git push origin master
    git push origin vX.Y.Z
    ```
-7. Confirm the workflow succeeded and the release published:
+8. Confirm the workflow succeeded and the release published:
    ```bash
    gh run list --repo ddtcorex/agent-dev-skills --limit 1
    gh release view vX.Y.Z --repo ddtcorex/agent-dev-skills
    ```
-8. If the workflow fails on the changelog-extraction step, it's almost always
+9. If the workflow fails on the changelog-extraction step, it's almost always
    because the `## [X.Y.Z]` header in `CHANGELOG.md` doesn't exactly match the
    pushed tag's version (the workflow strips a leading `v` from the tag and
    looks for `[X.Y.Z]` literally). The release workflow's manifest-validation
