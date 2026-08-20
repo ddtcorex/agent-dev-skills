@@ -58,9 +58,30 @@ Full mechanics, exact commands, and the remote-fetch limitation:
 1. Determine scope (ask if ambiguous — a bare "review this" with no target
    and no diff in the working tree is not enough to guess from).
 2. Resolve the scope to a file list per `references/scope-modes.md`.
-3. Run `magento2-linter` and `magento2-security-scan` against that file list
-   (see each skill's own "Scoping" section for how they accept a list vs. a
-   path). `magento2-security-scan`'s Authentication & Authorization, Data
+3. Run `magento2-security-scan` against that file list (see its own
+   "Scoping" section for how it accepts a list vs. a path) — its
+   text-pattern greps are genuinely file-scoped. `magento2-linter`'s native
+   gate is not: the file list does **not** flow into `govard audit run` —
+   that command has no file-list or changed-lines argument, and its finest
+   granularity is a whole module (`module_in_project`) or the whole project
+   (`project`); `govard audit diff --base <ref>` records the base ref but
+   still analyzes the full target (`effective_scope: project`). So at PR/MR
+   scope, invoke `magento2-linter`'s native run at whatever target mode it
+   resolves to and pick the PHP matrix/provider per its "Govard-Native Lint
+   Audit Is the Real Gate" section — don't restate that policy here —
+   preserve the `govard audit run` session and run IDs it returns, and then
+   split its findings into diff-introduced vs. pre-existing per
+   `references/scope-modes.md`'s "Local git diff" guidance: report a
+   pre-existing violation in a touched file separately, and don't block the
+   PR/MR on legacy debt the diff didn't create. The same file list still
+   feeds `magento2-linter`'s bare-tool fast pre-check (its own "Scoping"
+   section) — that's a local sanity check, not a substitute for the native
+   run's findings. For a repeat review of the same scope (e.g. re-checking
+   after fixes), rerun the exact prior session
+   (`govard audit rerun --session <session-id>`, per that skill's "Caching,
+   rerun identity, and read-only source") before comparing findings — a
+   fresh `govard audit run` starts an unrelated session, not a comparable
+   one. `magento2-security-scan`'s Authentication & Authorization, Data
    Exposure, and CSP Configuration checks are environment-level, not
    file-scoped — see its "Environment-level checks — scope boundary": they
    run once per audit at project/module/theme scope (never per file) and
