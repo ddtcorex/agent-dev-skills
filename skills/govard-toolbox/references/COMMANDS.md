@@ -83,3 +83,38 @@ Full canonical reference for all Govard subcommands.
 - **`govard project list`**: List all projects
 - **`govard project delete <name>`**: Remove project completely
 - **`govard project clean`**: Clean up resources
+
+## 9. Auditing (`govard audit`)
+
+Persistent, framework-declared project audits — lint is the only check
+implemented so far. For Magento 2, this is the native, authoritative lint
+gate; the full decision tree (target-mode resolution, PHP matrix, provider
+rules, caching/rerun identity) lives in the `magento2-linter` skill's
+"Govard-Native Lint Audit Is the Real Gate" section — this table is
+commands only, not policy.
+
+| Command | Purpose | Example |
+| :--- | :--- | :--- |
+| `run` | Run an audit against the resolved target | `govard audit run --checks lint` |
+| `run --mode standalone --php <list>` | Narrow the PHP matrix (standalone; see `magento2-linter` for `project`/`module_in_project`) | `govard audit run --mode standalone --php 8.1,8.5` |
+| `diff --base <ref>` | Record a base ref in the session manifest for a diff-scoped audit — lint still analyzes the full target today, so result evidence reports `effective_scope: project` regardless | `govard audit diff --base origin/master` |
+| `run --allow-lint-ssh-agent` | Forward the host's `SSH_AUTH_SOCK` into the lint container, needed for a `standalone` target with a private Git/Composer dependency; opt-in per run, never forwarded automatically | `govard audit run --mode standalone --allow-lint-ssh-agent` |
+| `run --lint-jobs <n>` | Lint worker count; must be between 1 and the number of PHP versions the framework declares (7 for Magento), not just the ones selected for this run (default 2) | `govard audit run --lint-jobs 1` |
+| `rerun` | Rerun the exact prior session (never guesses "latest") | `govard audit rerun --session SESSION_ID` |
+| `status` | Inspect a session | `govard audit status --session SESSION_ID` |
+| `result` | Show one run's result within a session | `govard audit result --session SESSION_ID --run RUN_ID` |
+| `toolchain status` | Inspect the local lint image; never pulls or builds | `govard audit toolchain status --format json` |
+| `toolchain pull` / `toolchain build` | Fetch the pinned image / build it locally | `govard audit toolchain pull` |
+| `cleanup` | Prune old sessions (not the analyzer cache) | `govard audit cleanup --older-than 168h` |
+
+`--lint-provider <name>` runs an external provider instead of the default
+`govard` one for that run; run it in addition to the native run, never as a
+replacement. For provider fallback/error policy, see `magento2-linter`
+skill's workflow step 5:
+
+```bash
+govard audit run --lint-provider team-ci
+```
+
+`team-ci` above is just an example provider name from the project's own
+`audit.lint.external_providers` config, not a built-in option.

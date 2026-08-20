@@ -23,6 +23,19 @@ Magento-specific shortcuts and commands for Govard environments.
 
 This skill covers only container/CLI shortcuts. For module architecture, DI, and security patterns, see `magento2-dev-core` and `magento2-backend-dev`; for code quality and performance checks, see `magento2-linter`, `magento2-security-scan`, and `magento2-performance-audit`.
 
+## Code Quality Audit
+
+`govard audit run --checks lint` is the native, persistent lint gate for this
+project — target-mode resolution, the PHP matrix, provider rules, and
+caching/rerun identity are all covered in `magento2-linter`'s
+"Govard-Native Lint Audit Is the Real Gate" section; this skill doesn't
+duplicate that policy. To re-check the exact same session (e.g. after a
+fix) instead of starting a fresh, non-comparable run:
+
+```bash
+govard audit rerun --session SESSION_ID
+```
+
 ## Magento CLI
 
 ```bash
