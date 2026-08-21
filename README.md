@@ -76,10 +76,21 @@ agent-dev-skills/
 
 ### 1. DeepSeek Harness (DSH)
 
-#### As a Cordis Plugin Package (`cordis.yml`)
+#### As a Cordis Plugin (installs the `ctx.skills` provider bundle)
+```bash
+dsh plugin --profile web add github:ddtcorex/agent-dev-skills
+```
+The package builds itself on install via its `prepare` script. pnpm ≥ 10 blocks git-dependency build scripts until you allow them — if the first add reports an ignored build, copy the key pnpm prints into the profile's `pnpm-workspace.yaml` and re-run:
 ```yaml
-- id: agent-dev-skills
-  name: '@ddtcorex/agent-dev-skills'
+allowBuilds:
+  '@ddtcorex/agent-dev-skills': true
+```
+
+To reference the plugin from a hand-written patch layer instead, the row must name the real package:
+```yaml
+- insert:
+    - id: agent-dev-skills
+      name: '@ddtcorex/agent-dev-skills'
 ```
 
 #### Via One-Line Installer (Installs Skills + DSH Web GUI Agent Preset)
@@ -88,9 +99,9 @@ curl -fsSL https://raw.githubusercontent.com/ddtcorex/agent-dev-skills/master/in
 ```
 This automatically installs:
 - All skills into `~/.dsh/skills/`
-- Agent Preset **"Govard Dev Agent"** into `~/.dsh/.agent-presets/agent-dev-skills/`
+- Agent Preset **"Govard Master"** into `~/.dsh/.agent-presets/agent-dev-skills/`
 
-After installation, open DSH Web GUI → **New Chat** → select **"Govard Dev Agent"** from the Agent picker.
+After installation, open DSH Web GUI → **New Chat** → select **"Govard Master"** from the Agent picker.
 
 ---
 

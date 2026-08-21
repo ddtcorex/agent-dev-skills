@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.6] - 2026-08-21
+
+### Fixed
+- Cordis plugin install chain for git-source installs (`dsh plugin add github:ddtcorex/agent-dev-skills`): added a `prepare` script (`tsc`) so the package builds `lib/` itself on install — a git install fetches sources only and never runs `build`, so the declared entry `lib/index.js` did not exist (found in awesome-dsh-plugin#2165 review). pnpm ≥ 10 users allow the build once via `allowBuilds` in the profile's `pnpm-workspace.yaml`; `dsh plugin` prints the exact key on first add.
+- `cordis.patch.yml` insert row now names `@ddtcorex/agent-dev-skills` instead of the bare `agent-dev-skills`: the loader imports the row's `name` as a Node specifier, and no package named `agent-dev-skills` exists — the bundle layer could never have loaded even with `lib/` built.
+
+### Changed
+- Renamed the DSH Web GUI Agent Preset from `"Govard Dev Agent"` to `"Govard Master"` (`preset.yml`; installer output and README updated to match).
+
 ## [1.0.5] - 2026-08-20
 
 ### Changed

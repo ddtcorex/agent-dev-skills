@@ -1,7 +1,7 @@
 {
   "name": "@ddtcorex/agent-dev-skills",
-  "version": "1.0.5",
-  "description": "Universal AI Agent Development Skills Hub & Cordis Plugin",
+  "version": "1.0.6",
+  "description": "Magento 2 development skills (8) with Govard/Laravel environment tooling (3), packaged as a Cordis plugin",
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -23,7 +23,8 @@
     "cordis.patch.yml"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepare": "tsc"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.0"

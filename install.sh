@@ -194,7 +194,7 @@ done
 echo
 echo "Done. $installed skill link(s) created/updated, $skipped skipped."
 if [ -n "$dsh_preset_installed" ]; then
-  echo "DSH Agent Preset 'Govard Dev Agent' installed at $preset_dest"
+  echo "DSH Agent Preset 'Govard Master' installed at $preset_dest"
 fi
 echo "Scope: $scope | Targets: $tool_list | Mode: $mode"
 echo "Update anytime by re-running this script (it re-pulls $CACHE_DIR and re-links)."
