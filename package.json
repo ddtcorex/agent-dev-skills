@@ -1,7 +1,7 @@
 {
-  "name": "@ddtcorex/agent-dev-skills",
-  "version": "1.0.6",
-  "description": "Magento 2 development skills (8) with Govard/Laravel environment tooling (3), packaged as a Cordis plugin",
+  "name": "@ddtcorex/maestro-skills",
+  "version": "2.0.0",
+  "description": "Magento 2 development skills (8), Govard/Laravel environment tooling (3), and the superpowers process-skills library (14, forked from obra/superpowers), packaged as a Cordis plugin",
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -20,6 +20,7 @@
   "files": [
     "lib",
     "skills",
+    ".dsh-plugin",
     "cordis.patch.yml"
   ],
   "scripts": {

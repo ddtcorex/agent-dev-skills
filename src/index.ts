@@ -1,5 +1,6 @@
-import { readdir, readFile, stat } from 'fs/promises'
+import { copyFile, mkdir, readdir, readFile, stat, writeFile } from 'fs/promises'
 import { dirname, join, resolve } from 'path'
+import { homedir } from 'os'
 import { fileURLToPath } from 'url'
 import type { Context } from '@deepseek-ai/cordis'
 import type {
@@ -12,7 +13,7 @@ import type {
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DEFAULT_SKILLS_DIR = resolve(__dirname, '../skills')
 
-export const name = 'agent-dev-skills'
+export const name = 'maestro-skills'
 export const inject = ['skills']
 
 export interface Config {
@@ -20,6 +21,13 @@ export interface Config {
   skillsDir?: string
   /** Provider precedence rank. Default: 350. */
   rank?: number
+  /**
+   * Copy the bundled DSH agent preset into `<dshHome>/.agent-presets/maestro-skills/`
+   * on startup so the preset appears in the Web GUI agent picker without running
+   * install.sh. Idempotent: files are re-copied on every boot so the preset tracks
+   * the installed plugin version. Default: true.
+   */
+  installPreset?: boolean
 }
 
 interface Frontmatter {
@@ -58,13 +66,45 @@ function parseFrontmatter(rawContent: string): { metadata: Frontmatter; body: st
   return { metadata, body }
 }
 
+/** Preset id and destination directory name under `<dshHome>/.agent-presets/`. */
+const PRESET_ID = 'maestro-skills'
+/** Files copied from .dsh-plugin/ into the preset directory. */
+const PRESET_FILES = ['preset.yml', 'agent.cordis.yml'] as const
+
+/**
+ * Materialize the bundled DSH agent preset into the harness-home user root so
+ * `dsh-agent-presets` discovery lists it in the Web GUI agent picker. This is
+ * what makes `dsh plugin add` a complete install — install.sh only exists for
+ * non-plugin (loose skill file) setups. Re-copied on every boot so an upgrade
+ * of this package updates the preset; failures never break skill serving.
+ */
+async function materializePreset(): Promise<string | undefined> {
+  try {
+    const dest = join(homedir(), '.dsh', '.agent-presets', PRESET_ID)
+    await mkdir(dest, { recursive: true })
+    for (const file of PRESET_FILES) {
+      await copyFile(join(__dirname, '../.dsh-plugin', file), join(dest, file))
+    }
+    return dest
+  } catch {
+    return undefined
+  }
+}
+
 export function apply(ctx: Context, config: Config = {}) {
   const skillsDir = config.skillsDir ? resolve(config.skillsDir) : DEFAULT_SKILLS_DIR
   const rank = config.rank ?? 350
 
+  if (config.installPreset !== false) {
+    void materializePreset().then(dest => {
+      if (dest !== undefined) ctx.logger.info('maestro-skills: DSH agent preset installed at %s', dest)
+      else ctx.logger.warn('maestro-skills: could not install the DSH agent preset (see .dsh-plugin/)')
+    })
+  }
+
   const unregister = ctx.skills.registerProvider((_control: SkillProviderControl) => {
     return {
-      name: 'agent-dev-skills',
+      name: 'maestro-skills',
       async list(_options: SkillLookupOptions) {
         const candidates: SkillCandidate[] = []
         try {
@@ -88,7 +128,7 @@ export function apply(ctx: Context, config: Config = {}) {
               description,
               invocation: { modelInvocable: true, userInvocable: true },
               source: 'custom',
-              provider: 'agent-dev-skills',
+              provider: 'maestro-skills',
               rank,
               locator: skillFilePath,
               path: skillFilePath,

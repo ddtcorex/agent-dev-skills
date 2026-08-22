@@ -4,6 +4,50 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-08-22
+
+### Added
+- **Forked the complete superpowers process-skills library (14 skills) from
+  [obra/superpowers](https://github.com/obra/superpowers) v6.3.0** into
+  `skills/`: brainstorming, dispatching-parallel-agents, executing-plans,
+  finishing-a-development-branch, receiving-code-review,
+  requesting-code-review, subagent-driven-development, systematic-debugging,
+  test-driven-development, using-git-worktrees, using-superpowers,
+  verification-before-completion, writing-plans, writing-skills. MIT license;
+  attribution in the new `THIRD-PARTY-NOTICES.md` (license text retained as
+  the MIT license requires). The bundle is now 25 skills: 11 domain + 14
+  process.
+- `skills/using-superpowers/references/dsh-tools.md` — DeepSeek Harness tool
+  mapping (the fork's only body-level addition), plus a DSH row in the skill's
+  Platform Adaptation list and a fork-provenance note in `using-superpowers/SKILL.md`.
+- `scripts/sync-superpowers.sh [ref]` — refreshes the fork from upstream while
+  preserving the local additions, for review-before-commit syncing.
+- **The DSH Cordis plugin now materializes its agent preset itself**: on every
+  boot it copies `.dsh-plugin/{preset.yml,agent.cordis.yml}` into
+  `~/.dsh/.agent-presets/maestro-skills/` (opt-out: `installPreset: false` in
+  the plugin row's config), so `dsh plugin --profile web add
+  github:ddtcorex/maestro-skills` is a complete install — install.sh is no
+  longer required on DSH and remains for loose (non-plugin) skill files.
+
+### Changed
+- **BREAKING: renamed the plugin from `agent-dev-skills` to `maestro-skills`
+  everywhere**: npm `@ddtcorex/maestro-skills`, Claude/Codex plugin name
+  `maestro-skills`, installer cache `~/.maestro-skills`, env prefix
+  `MAESTRO_SKILLS_*` (legacy `AGENT_DEV_SKILLS_*` still honored as fallback),
+  DSH preset id `maestro-skills`, GitHub repo `ddtcorex/maestro-skills` (old
+  URLs redirect after the GitHub rename). Individual skill names are
+  unchanged, so `depends:` chains and downstream exact-name consumers (e.g.
+  dsh-maestro-harness's review profile) keep working; bump to 2.0.0 because
+  the install command and package name changed.
+- DSH agent preset renamed from **"Govard Master"** to **"Maestro Skills"**;
+  its persona now names the full 25-skill library and mandates the
+  process-first workflow (brainstorming before creative work,
+  systematic-debugging on bugs, verification-before-completion before
+  claiming done).
+- `install.sh` targets `github.com/ddtcorex/maestro-skills`, caches to
+  `~/.maestro-skills`, and installs the preset to
+  `~/.dsh/.agent-presets/maestro-skills/`.
+
 ## [1.0.6] - 2026-08-21
 
 ### Fixed

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
-# agent-dev-skills one-line installer / updater.
+# maestro-skills one-line installer / updater.
 #
-#   curl -fsSL https://raw.githubusercontent.com/ddtcorex/agent-dev-skills/master/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/ddtcorex/maestro-skills/master/install.sh | bash
+#
+# NOTE: on DeepSeek Harness you do NOT need this script -- add the package as a
+# plugin and it serves all skills itself and installs its agent preset:
+#   dsh plugin --profile web add github:ddtcorex/maestro-skills
+# This installer is for loose (non-plugin) skill files on any tool.
 #
 # Re-running this script (locally, or via the same one-liner) updates the
 # cached clone and re-links everything -- that IS the update path, there is
@@ -17,8 +22,8 @@
 #   dsh       -> .dsh/skills             (~/.dsh/skills)
 set -euo pipefail
 
-REPO_URL="https://github.com/ddtcorex/agent-dev-skills.git"
-CACHE_DIR="${AGENT_DEV_SKILLS_HOME:-$HOME/.agent-dev-skills}"
+REPO_URL="https://github.com/ddtcorex/maestro-skills.git"
+CACHE_DIR="${MAESTRO_SKILLS_HOME:-$HOME/.maestro-skills}"
 ALL_TOOLS="claude opencode codex copilot dsh"
 
 scope="project"
@@ -42,8 +47,9 @@ Usage: install.sh [options]
   -y, --yes                   Never prompt; use defaults/flags only
   -h, --help                  Show this help
 
-Environment variables mirror the flags: AGENT_DEV_SKILLS_HOME, AGENT_DEV_SKILLS_SCOPE,
-AGENT_DEV_SKILLS_TARGET, AGENT_DEV_SKILLS_SKILLS, AGENT_DEV_SKILLS_MODE.
+Environment variables mirror the flags: MAESTRO_SKILLS_HOME, MAESTRO_SKILLS_SCOPE,
+MAESTRO_SKILLS_TARGET, MAESTRO_SKILLS_SKILLS, MAESTRO_SKILLS_MODE.
+(Legacy AGENT_DEV_SKILLS_* variables are still honored when their new counterparts are unset.)
 EOF
 }
 
@@ -60,10 +66,10 @@ while [ $# -gt 0 ]; do
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
 done
-scope="${AGENT_DEV_SKILLS_SCOPE:-$scope}"
-targets="${AGENT_DEV_SKILLS_TARGET:-$targets}"
-skills="${AGENT_DEV_SKILLS_SKILLS:-$skills}"
-mode="${AGENT_DEV_SKILLS_MODE:-$mode}"
+scope="${MAESTRO_SKILLS_SCOPE:-${AGENT_DEV_SKILLS_SCOPE:-$scope}}"
+targets="${MAESTRO_SKILLS_TARGET:-${AGENT_DEV_SKILLS_TARGET:-$targets}}"
+skills="${MAESTRO_SKILLS_SKILLS:-${AGENT_DEV_SKILLS_SKILLS:-$skills}}"
+mode="${MAESTRO_SKILLS_MODE:-${AGENT_DEV_SKILLS_MODE:-$mode}}"
 
 # TTY-safe prompt: when piped via `curl | bash`, stdin is the script itself,
 # not the user, so fall back to reading straight from /dev/tty (same trick
@@ -91,7 +97,7 @@ if [ -d "$CACHE_DIR/.git" ]; then
   echo "Updating $CACHE_DIR ..." >&2
   git -C "$CACHE_DIR" pull --ff-only
 else
-  echo "Cloning agent-dev-skills into $CACHE_DIR ..." >&2
+  echo "Cloning maestro-skills into $CACHE_DIR ..." >&2
   git clone --depth 1 "$REPO_URL" "$CACHE_DIR"
 fi
 
@@ -179,7 +185,7 @@ dsh_preset_installed=""
 for tool in $tool_list; do
   if [ "$tool" = "dsh" ] && [ -d "$CACHE_DIR/.dsh-plugin" ]; then
     preset_src="$CACHE_DIR/.dsh-plugin"
-    preset_dest="$HOME/.dsh/.agent-presets/agent-dev-skills"
+    preset_dest="$HOME/.dsh/.agent-presets/maestro-skills"
     mkdir -p "$preset_dest"
     for f in preset.yml agent.cordis.yml; do
       if [ -f "$preset_src/$f" ]; then
@@ -194,7 +200,7 @@ done
 echo
 echo "Done. $installed skill link(s) created/updated, $skipped skipped."
 if [ -n "$dsh_preset_installed" ]; then
-  echo "DSH Agent Preset 'Govard Master' installed at $preset_dest"
+  echo "DSH Agent Preset 'Maestro Skills' installed at $preset_dest"
 fi
 echo "Scope: $scope | Targets: $tool_list | Mode: $mode"
 echo "Update anytime by re-running this script (it re-pulls $CACHE_DIR and re-links)."

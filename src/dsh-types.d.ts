@@ -2,6 +2,8 @@ declare module '@deepseek-ai/cordis' {
   export interface Context {
     skills: any
     effect(cb: () => void): () => void
+    /** Cordis logger; available on every plugin context. */
+    logger: { info(fmt: string, ...args: unknown[]): void; warn(fmt: string, ...args: unknown[]): void }
   }
 }
 

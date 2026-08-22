@@ -1,2 +1,2 @@
-name: Govard Master
-description: Specialized AI Agent preset for Govard environment orchestration and supported web frameworks (Magento 2, Laravel, etc.) powered by agent-dev-skills.
+name: Maestro Skills
+description: AI Agent preset bundling the maestro-skills library - Govard environment orchestration and web frameworks (Magento 2, Laravel) plus the superpowers process-skills workflow (brainstorming, TDD, systematic debugging, subagent-driven development).

@@ -1,12 +1,14 @@
-# Agent Dev Skills Preset (Govard & Supported Frameworks)
+# Maestro Skills Preset (Govard & Supported Frameworks + Superpowers Workflow)
 #
-# This preset ships inside agent-dev-skills. The installer copies this directory
-# into ~/.dsh/.agent-presets/agent-dev-skills/ so DSH discovers it as a selectable
-# Agent in the Web GUI.
+# This preset ships inside maestro-skills. Two paths put it on the DSH roster:
+#   - the Cordis plugin materializes it into ~/.dsh/.agent-presets/maestro-skills/
+#     at startup (src/index.ts), so a plain `dsh plugin add` is enough;
+#   - install.sh --target dsh copies the same files for non-plugin setups.
 #
 # skill-filesystem automatically discovers skills from the user's ~/.dsh/skills/
-# directory (where install.sh links them), so no hardcoded customSkillDirs is
-# needed here.
+# directory, so no hardcoded customSkillDirs is needed here. When installed as a
+# plugin instead, the packaged provider in src/index.ts serves all 25 skills
+# directly from the package - no linking required either.
 #
 # Derived from DeepSeek Harness's own `standard` agent preset
 # (apps/cli/config/agent-presets/standard/agent.cordis.yml in
@@ -34,8 +36,8 @@
   config:
     text: >-
       You are a Senior AI Agent Engineer specializing in Govard environment orchestration and supported web frameworks (Magento 2, Laravel, etc.) powered by the {{model}} model. Your working directory is {{cwd}}.
-      You master architecture design, Dependency Injection, APIs, frontend/backend engineering, performance auditing, security scanning, and code reviews using agent-dev-skills.
-      Always adhere strictly to framework best practices, proper security escaping, and clean engineering standards.
+      You master architecture design, Dependency Injection, APIs, frontend/backend engineering, performance auditing, security scanning, and code reviews using the maestro-skills library - 11 domain skills (magento2-*, govard-*) plus 14 process skills forked from obra/superpowers (brainstorming, test-driven-development, systematic-debugging, writing-plans, subagent-driven-development).
+      Before any creative work invoke brainstorming; before fixing any bug invoke systematic-debugging; before claiming work complete run verification-before-completion. Process skills come first, then domain skills. Always adhere strictly to framework best practices, proper security escaping, and clean engineering standards.
 
 - id: agent-instructions
   name: '@deepseek-ai/dsh-agent-instructions'
@@ -81,7 +83,8 @@
 # The skill registry lives in the host composition and is layered per scope,
 # so these rows register into this preset's layer without needing a realm.
 # skill-filesystem scans ~/.dsh/skills/ by default. install.sh --target dsh
-# links every agent-dev-skills skill there, so no customSkillDirs needed here.
+# links every maestro-skills skill there; as a plugin, src/index.ts serves the
+# packaged skills itself. Either way no customSkillDirs needed here.
 - id: skill-filesystem
   name: '@deepseek-ai/dsh-skill-filesystem'
 

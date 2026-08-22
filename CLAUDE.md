@@ -4,12 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A dual-ecosystem plugin (`agent-dev-skills`) bundling 11 Magento 2 and Govard
-development skills, distributed via self-listing marketplaces for both Claude
-Code and Codex CLI. There is no build step, no test suite, and no application
-code — the repository *is* the plugin (in both ecosystems at once), and its
-content is Markdown (`SKILL.md`) plus four JSON manifests and one install
-script.
+A dual-ecosystem plugin (`maestro-skills`, npm `@ddtcorex/maestro-skills`)
+bundling 25 skills in two halves: 11 Magento 2 / Govard domain skills written
+here, plus the 14-skill **superpowers process library forked verbatim from
+[obra/superpowers](https://github.com/obra/superpowers) v6.3.0** (MIT — see
+`THIRD-PARTY-NOTICES.md`). Distributed via self-listing marketplaces for both
+Claude Code and Codex CLI, and as a DeepSeek Harness Cordis plugin that also
+installs its own DSH agent preset at startup. There is no test suite and no
+application code beyond `src/` (the Cordis plugin) — the repository *is* the
+plugin (in every ecosystem at once), and its content is Markdown (`SKILL.md`)
+plus four JSON manifests, one install script, and one sync script.
 
 ## Architecture
 
@@ -44,11 +48,11 @@ both point at the *same* `skills/` directory so neither duplicates content:
   `.agents/plugins/marketplace.json` that self-lists this repo the same way
   (`"source": {"source": "local", "path": "./"}`). Verified end-to-end
   against the real `codex` binary: `codex plugin marketplace add .` then
-  `codex plugin add agent-dev-skills@ddtcorex` resolves all 11 skills
+  `codex plugin add maestro-skills@ddtcorex` resolves all 25 skills
   with zero copying.
 
-The marketplace top-level `name` is `ddtcorex` and the plugin's `name` is `agent-dev-skills`,
-so `plugin install agent-dev-skills@ddtcorex` reads as `<plugin>@<publisher>` on either tool.
+The marketplace top-level `name` is `ddtcorex` and the plugin's `name` is `maestro-skills`,
+so `plugin install maestro-skills@ddtcorex` reads as `<plugin>@<publisher>` on either tool.
 The **version field must be bumped in three places together** —
 `.claude-plugin/plugin.json`'s `version`, `.claude-plugin/marketplace.json`'s
 `plugins[0].version` / `metadata.version`, and `.codex-plugin/plugin.json`'s
@@ -57,7 +61,7 @@ its own) — nothing enforces they match automatically.
 
 ### One SKILL.md format, four incompatible project-level paths, two plugin loaders
 
-All 11 skills follow the [Agent Skills standard](https://agentskills.io) (a
+All 25 skills follow the [Agent Skills standard](https://agentskills.io) (a
 `SKILL.md` file with `name`/`description` YAML frontmatter) — a format Claude
 Code, OpenCode, Codex CLI, and GitHub Copilot all read identically. What
 differs is which directory name each tool scans in a *consuming project* for
@@ -85,7 +89,10 @@ OpenCode and GitHub Copilot have no plugin-loader equivalent as of this
 writing. `install.sh` exists to bridge the gap for direct (non-plugin) use on
 any tool — including Claude/Codex users who'd rather symlink skill files than
 install a plugin: it never tries to make one folder satisfy all four tools,
-it links per-tool into whichever directory each one actually scans.
+it links per-tool into whichever directory each one actually scans. On DSH the
+installer is **optional**: the Cordis plugin serves the packaged skills itself
+and materializes the agent preset at startup, so `dsh plugin add` alone is a
+complete install.
 
 ### Skill dependency chain
 
@@ -102,6 +109,31 @@ cross-tool-sharing convention along with `compatibility` and `metadata`):
 
 When editing a dependency's SKILL.md (`magento2-dev-core`, `govard-toolbox`),
 check whether the change invalidates guidance in the skills that depend on it.
+
+### Superpowers fork governance
+
+The 14 process skills under `skills/` (brainstorming, dispatching-parallel-
+agents, executing-plans, finishing-a-development-branch, receiving-code-review,
+requesting-code-review, subagent-driven-development, systematic-debugging,
+test-driven-development, using-git-worktrees, using-superpowers,
+verification-before-completion, writing-plans, writing-skills) are **not
+hand-maintained** — they are a verbatim fork of obra/superpowers v6.3.0:
+
+- **Do not edit forked skill bodies.** Upstream is their single source of
+  truth. This is a deliberate exception to the "single source of truth"
+  rule above: the fork *is* the one location for this content, and its
+  authority lives upstream.
+- The only sanctioned local additions are `skills/using-superpowers/references/
+dsh-tools.md` (the DSH tool map) and the fork-provenance/un-namespaced-
+invocation notes in `using-superpowers/SKILL.md`.
+- Refresh via `scripts/sync-superpowers.sh [ref]`; it preserves the local
+  additions and prints a diff. Update the fork version in
+  `THIRD-PARTY-NOTICES.md` after a sync. Attribution is an MIT license
+  requirement — never drop `THIRD-PARTY-NOTICES.md`.
+- Skill **name collisions** would shadow across providers: never name a new
+  domain skill the same as (or after renaming) a superpowers skill.
+- The ~170–220 words-per-lesson budget below applies to the 11 domain
+  skills' reference files only, not to forked upstream content.
 
 ### Adding a lesson to a skill reference file
 
@@ -125,9 +157,10 @@ One-line installer/updater (`curl -fsSL .../install.sh | bash`). Key points if
 modifying it:
 
 - **Clone-once-to-cache, link-out-per-tool**: clones this repo into
-  `~/.agent-dev-skills` (override: `AGENT_DEV_SKILLS_HOME`); re-running the same
-  command is the update path (`git pull --ff-only` + re-link) — there is no
-  separate `update.sh`.
+  `~/.maestro-skills` (override: `MAESTRO_SKILLS_HOME`; the legacy
+  `AGENT_DEV_SKILLS_HOME` still works when the new var is unset); re-running
+  the same command is the update path (`git pull --ff-only` + re-link) — there
+  is no separate `update.sh`. On DSH this installer is optional — see above.
 - **TTY handling follows the rustup-init.sh pattern**: `[ -t 0 ]` for a real
   interactive stdin, else fall back to `< /dev/tty` if `[ -t 1 ]` (stdout is
   still a real terminal even though stdin was consumed by the `curl | bash`
@@ -138,9 +171,10 @@ modifying it:
   as user-owned and skipped unless `--force` — this is what stops the
   installer from clobbering a user's own hand-written skill of the same name.
   Don't remove this check to "simplify" the linking loop.
-- Env vars mirror the flags and are prefixed `AGENT_DEV_SKILLS_*` (`_HOME`,
+- Env vars mirror the flags and are prefixed `MAESTRO_SKILLS_*` (`_HOME`,
   `_SCOPE`, `_TARGET`, `_SKILLS`, `_MODE`) — keep this prefix if adding new
-  configurable behavior.
+  configurable behavior. The old `AGENT_DEV_SKILLS_*` names remain as fallbacks
+  for existing setups.
 
 ## Commands
 
@@ -153,34 +187,40 @@ actually link/unlink files correctly?).
 claude plugin validate . --strict
 
 # Inspect what the plugin loader actually resolves (skills found, token cost)
-claude --plugin-dir . plugin details agent-dev-skills
+claude --plugin-dir . plugin details maestro-skills
 
 # Full local install/uninstall round-trip against the working tree (not a
 # published release) -- always clean up after testing, this registers real
 # state in the local Claude Code config:
 claude plugin marketplace add .
-claude plugin install agent-dev-skills@ddtcorex
+claude plugin install maestro-skills@ddtcorex
 # ... test ...
-claude plugin uninstall agent-dev-skills@ddtcorex
+claude plugin uninstall maestro-skills@ddtcorex
 claude plugin marketplace remove ddtcorex
 
 # Codex CLI has no `plugin validate` subcommand -- the only real check is a
 # live round-trip. Use $CODEX_HOME to keep it out of your real Codex config:
 export CODEX_HOME=$(mktemp -d)
 codex plugin marketplace add .
-codex plugin list --available --json   # confirm agent-dev-skills@ddtcorex is listed
-codex plugin add agent-dev-skills@ddtcorex
-codex plugin list --json               # confirm it installed and all 11 skills resolved
+codex plugin list --available --json   # confirm maestro-skills@ddtcorex is listed
+codex plugin add maestro-skills@ddtcorex
+codex plugin list --json               # confirm it installed and all 25 skills resolved
 unset CODEX_HOME                       # the temp dir is disposable -- nothing else to clean up
 
 # install.sh: syntax check and dry test in an isolated scratch dir (never
 # test --scope personal against your real $HOME -- override HOME and
-# AGENT_DEV_SKILLS_HOME to a scratch path first). Note: install.sh's REPO_URL
+# MAESTRO_SKILLS_HOME to a scratch path first). Note: install.sh's REPO_URL
 # points at GitHub, so testing local/uncommitted changes to skills/ requires
 # either a temporary local git remote (init+commit a scratch copy and point
 # REPO_URL at it) or pushing first -- git clone never sees uncommitted work.
 bash -n install.sh
 bash install.sh --help
+```
+
+```bash
+# Superpowers fork sync (see "Superpowers fork governance" above)
+scripts/sync-superpowers.sh            # to upstream HEAD
+scripts/sync-superpowers.sh v6.4.0     # or a specific tag; review the diff it prints
 ```
 
 ## Release checklist
@@ -199,12 +239,12 @@ manual release step in the GitHub UI.
    (`.agents/plugins/marketplace.json` has no version field to update).
 5. Bump `"version"` in `package.json` to the same value — this is the npm
    manifest for the DeepSeek Harness/Cordis distribution
-   (`@ddtcorex/agent-dev-skills`), a separate publish target from the
+   (`@ddtcorex/maestro-skills`), a separate publish target from the
    Claude/Codex plugin manifests above. The release workflow does not
    validate or read it, so nothing enforces this automatically; keep it in
    sync by hand.
 6. If `skills/` changed, run `claude plugin validate . --strict` and
-   `claude --plugin-dir . plugin details agent-dev-skills` locally first; for a
+   `claude --plugin-dir . plugin details maestro-skills` locally first; for a
    change that affects Codex specifically, also run the
    `codex plugin marketplace add .` / `codex plugin add` round-trip from the
    Commands section above. If `src/` (the DSH Cordis plugin) changed, run
@@ -223,8 +263,8 @@ manual release step in the GitHub UI.
    ```
 8. Confirm the workflow succeeded and the release published:
    ```bash
-   gh run list --repo ddtcorex/agent-dev-skills --limit 1
-   gh release view vX.Y.Z --repo ddtcorex/agent-dev-skills
+   gh run list --repo ddtcorex/maestro-skills --limit 1
+   gh release view vX.Y.Z --repo ddtcorex/maestro-skills
    ```
 9. If the workflow fails on the changelog-extraction step, it's almost always
    because the `## [X.Y.Z]` header in `CHANGELOG.md` doesn't exactly match the

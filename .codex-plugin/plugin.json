@@ -1,13 +1,13 @@
 {
-  "name": "agent-dev-skills",
-  "version": "1.0.6",
-  "description": "Universal AI Agent Development Skills Hub & Cordis Plugin for Govard & supported web frameworks (Magento 2, Laravel, etc.)",
+  "name": "maestro-skills",
+  "version": "2.0.0",
+  "description": "Maestro Skills Hub & Cordis Plugin for Govard & supported web frameworks (Magento 2, Laravel, etc.) plus the superpowers process-skills library (forked from obra/superpowers)",
   "author": {
     "name": "DDTCoreX",
     "email": "kaido4492@gmail.com"
   },
-  "homepage": "https://github.com/ddtcorex/agent-dev-skills",
-  "repository": "https://github.com/ddtcorex/agent-dev-skills",
+  "homepage": "https://github.com/ddtcorex/maestro-skills",
+  "repository": "https://github.com/ddtcorex/maestro-skills",
   "license": "MIT",
   "keywords": [
     "govard",

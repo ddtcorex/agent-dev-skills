@@ -5,7 +5,7 @@
   },
   "plugins": [
     {
-      "name": "agent-dev-skills",
+      "name": "maestro-skills",
       "source": {
         "source": "local",
         "path": "./"
